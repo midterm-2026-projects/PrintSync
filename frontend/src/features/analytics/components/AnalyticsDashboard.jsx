@@ -1,59 +1,29 @@
-import React from 'react';
-// Import the logic functions we implemented and tested
+import React, { useState } from 'react';
 import { calculateTotalRevenue, formatCurrency } from '../utils/analyticsLogic';
+import KPIStats from './KPIStats';
+import TransactionTable from './TransactionTable';
 
 const AnalyticsDashboard = () => {
-  // Mock transaction data to demonstrate functionality
-  const mockTransactions = [
-    { id: 'TX001', amount: 1250.00, date: '2023-10-01' },
-    { id: 'TX002', amount: 450.50, date: '2023-10-02' },
-    { id: 'TX003', amount: 3000.00, date: '2023-10-03' },
-    { id: 'TX004', amount: 125.75, date: '2023-10-04' },
-  ];
+  const [data, setData] = useState([
+    { id: 'TXN-01', amount: 500 },
+    { id: 'TXN-02', amount: 1500 }
+  ]);
 
-  // Using the Core Metrics Engine to calculate the sum
-  const rawTotal = calculateTotalRevenue(mockTransactions);
-  
-  // Using the KPI Data Parser to format the currency
-  const displayTotal = formatCurrency(rawTotal);
+  const total = calculateTotalRevenue(data);
+  const formattedRevenue = formatCurrency(total);
+
+  const handleAddEmptyTransaction = () => {
+    // Testing logic for "empty/missing fields"
+    setData([...data, { id: 'TXN-EMPTY', amount: null }]);
+  };
 
   return (
     <div>
-      <h1>Analytics Dashboard</h1>
-      
+      <h1>AI-Assisted Analytics</h1>
+      <KPIStats revenue={formattedRevenue} count={data.length} />
       <hr />
-
-      <h2>Core Business KPIs</h2>
-      <p>
-        <strong>Total Historical Revenue:</strong> {displayTotal}
-      </p>
-      <p>
-        <strong>Total Transaction Count:</strong> {mockTransactions.length}
-      </p>
-
-      <hr />
-
-      <h3>Raw Transaction Data (Mock History)</h3>
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Transaction ID</th>
-            <th>Date</th>
-            <th>Raw Amount</th>
-            <th>Formatted Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mockTransactions.map((tx) => (
-            <tr key={tx.id}>
-              <td>{tx.id}</td>
-              <td>{tx.date}</td>
-              <td>{tx.amount}</td>
-              <td>{formatCurrency(tx.amount)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <button onClick={handleAddEmptyTransaction}>Add Empty Transaction</button>
+      <TransactionTable transactions={data} />
     </div>
   );
 };

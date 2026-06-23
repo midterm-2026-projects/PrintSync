@@ -1,65 +1,37 @@
 import React, { useState } from 'react';
 import { initializeInventory, formatInventoryItem } from '../utils/inventoryLogic';
+import InventoryTable from './InventoryTable';
 
 const InventoryModule = () => {
-  // Use the tested initialization function
   const [inventory, setInventory] = useState(initializeInventory());
 
-  // Simulation: Take raw data and pass it through the tested parser
-  const handleAddItem = () => {
-    const rawData = {
-      name: "Standard Cotton Tee",
-      quantity: Math.floor(Math.random() * 100) + 1, // Simulated raw input variable
-      type: "Garment"
-    };
+  const handleAddValidItem = () => {
+    const rawData = { name: "Silk Screen Mesh", quantity: 15, type: "Material" };
+    const formatted = formatInventoryItem(rawData);
+    setInventory([...inventory, formatted]);
+  };
 
-    const formattedItem = formatInventoryItem(rawData);
-    setInventory([...inventory, formattedItem]);
+  const handleAddEmptyItem = () => {
+    // Simulating a user submitting a form without filling it out
+    const rawData = { name: "", quantity: "" };
+    const formatted = formatInventoryItem(rawData);
+    setInventory([...inventory, formatted]);
   };
 
   return (
     <div>
       <h1>Inventory Management</h1>
+      <p>Member: Ma. Erica Z. Vidal | Week 1, Day 1</p>
 
-      <section>
-        <h2>Actions</h2>
-        <button onClick={handleAddItem}>Add Formatted Item (Simulated)</button>
-        <button onClick={() => setInventory(initializeInventory())}>Clear/Initialize</button>
-      </section>
+      <div style={{ marginBottom: '20px' }}>
+        <button onClick={handleAddValidItem}>Add Valid Item</button>
+        <button onClick={handleAddEmptyItem}>Add Item with Empty Fields</button>
+        <button onClick={() => setInventory(initializeInventory())}>Reset</button>
+      </div>
 
-      <hr />
-
-      <section>
-        <h2>Inventory Table</h2>
-        {inventory.length === 0 ? (
-          <p><i>The inventory is currently empty (Initialized State).</i></p>
-        ) : (
-          <table border="1" cellPadding="5" style={{ width: '100%', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f2f2f2' }}>
-                <th>Product Name</th>
-                <th>Stock Quantity</th>
-                <th>Category</th>
-                <th>Internal ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inventory.map((item) => (
-                <tr key={item.id}>
-                  {/* Requirement: Extract correct product name */}
-                  <td>{item.productName}</td>
-                  
-                  {/* Requirement: Extract and return correct stock quantity */}
-                  <td>{item.stock} units</td>
-                  
-                  <td>{item.category}</td>
-                  <td><small>{item.id}</small></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+      <h2>Inventory Collection</h2>
+      {/* Passing the state down to the separated Table component */}
+      <InventoryTable items={inventory} />
     </div>
   );
 };

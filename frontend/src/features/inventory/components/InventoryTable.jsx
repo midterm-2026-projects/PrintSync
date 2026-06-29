@@ -1,7 +1,10 @@
 import React from 'react';
 
 const InventoryTable = ({ items }) => {
-  if (!items || items.length === 0) {
+  // Logic: Initialize clean display. Handle null or empty array.
+  const safeItems = items || [];
+
+  if (safeItems.length === 0) {
     return <p><i>The inventory is currently empty (Initialized State).</i></p>;
   }
 
@@ -15,7 +18,7 @@ const InventoryTable = ({ items }) => {
         </tr>
       </thead>
       <tbody>
-        {items.map((item) => (
+        {safeItems.map((item) => (
           <tr key={item.id}>
             <td>{item.productName}</td>
             <td>{item.stock} units</td>

@@ -1,10 +1,14 @@
 import React from 'react';
-import InventoryModule from './features/inventory/components/InventoryModule';
+import InventoryAdder from './features/inventory/components/InventoryAdder';
+import InventoryHeader from './features/inventory/components/InventoryHeader';
+import InventoryTable from './features/inventory/components/InventoryTable';
 
 function App() {
   return (
     <div>
-      <InventoryModule />
+      <InventoryHeader />
+      <InventoryAdder />
+      <InventoryTable />
     </div>
   );
 }

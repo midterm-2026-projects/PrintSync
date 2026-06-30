@@ -1,30 +1,35 @@
 import React from 'react';
 
-// Absorbed logic: Defines the baseline transaction state structure
-export const INITIAL_POS_STATE = {
-  cart: [],
-  subtotal: 0,
-  tax: 0,
-  total: 0
-};
-
-const POSCart = ({ cartItems }) => {
-  // Logic: Handle null, undefined, or empty fields gracefully
-  const safeCart = cartItems || [];
-
+const POSCart = ({ cartItems = [], onUpdateQty }) => {
   return (
     <div id="pos-cart-section">
       <h3>Transaction Cart</h3>
-      <p>Items in Cart: <span data-testid="cart-count">{safeCart.length}</span></p>
+      <p>Items in Cart: <span data-testid="cart-count">{cartItems.length}</span></p>
       
-      {safeCart.length === 0 ? (
+      {cartItems.length === 0 ? (
         <p>Your cart is empty.</p>
       ) : (
-        <ul>
-          {safeCart.map((item, idx) => (
-            <li key={`${item.id}-${idx}`}>{item.productName}</li>
-          ))}
-        </ul>
+        <table border="1" style={{ width: '100%', textAlign: 'left' }}>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cartItems.map((item) => (
+              <tr key={item.id}>
+                <td>{item.productName}</td>
+                <td>{item.quantity}</td>
+                <td>
+                  <button onClick={() => onUpdateQty(item.id, item.quantity + 1)}>+</button>
+                  <button onClick={() => onUpdateQty(item.id, item.quantity - 1)}>-</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

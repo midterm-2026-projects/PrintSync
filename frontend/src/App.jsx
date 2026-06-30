@@ -1,3 +1,6 @@
+
+export default App;
+
 import React, { useState } from 'react';
 
 // Import Lyell's POS Components

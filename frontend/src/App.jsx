@@ -1,75 +1,32 @@
-
-export default App;
-
 import React, { useState } from 'react';
-
-// Import Lyell's POS Components
-import POSSearchBar from './features/pos/components/POSSearchBar';
-import POSItemList from './features/pos/components/POSItemList';
-import POSCart from './features/pos/components/POSCart';
+import AnalyticsHeader from './features/analytics/components/AnalyticsHeader';
+import KPIDisplay from './features/analytics/components/KPIDisplay';
+import TransactionHistory from './features/analytics/components/TransactionHistory';
+import SalesTrendChart from './features/analytics/components/SalesTrendChart';
 
 function App() {
-  // --- MOCK DATA FOR POS ---
-  const mockInventory = [
-    { id: 101, productName: "Custom Blue T-Shirt", stock: 25 },
-    { id: 102, productName: "Red Hoodie", stock: 12 },
-    { id: 103, productName: "Vinyl Sticker Pack", stock: 100 },
-    { id: 104, productName: "Canvas Tote Bag", stock: 45 },
-  ];
-
-  // --- POS INDEPENDENT STATE ---
-  const [posSearch, setPosSearch] = useState("");
-  const [cartItems, setCartItems] = useState([]);
-
-  // Function to handle adding items to the cart
-  const handleSelectItem = (item) => {
-    setCartItems([...cartItems, item]);
-  };
+  // Mock data for Week 2 Day 1
+  const [salesHistory] = useState([
+    { date: 'Oct 01', amount: 1200 },
+    { date: 'Oct 02', amount: 2500 },
+    { date: 'Oct 03', amount: 1800 },
+    { date: 'Oct 04', amount: 4200 },
+    { date: 'Oct 05', amount: 3100 }
+  ]);
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      
-      {/* POS MODULE SECTION */}
-      <div id="pos-module-container">
-        <h1>POS Terminal</h1>
-        <p>Member: Lyell Jasmine D. Bulan</p>
-        
-        {/* 1. Search Bar: Logic absorbed (handles input) */}
-        <POSSearchBar 
-          value={posSearch} 
-          onChange={setPosSearch} 
-        />
+    <div style={{ padding: '20px' }}>
+      <AnalyticsHeader lastUpdated="2023-10-27" />
 
-        <div style={{ display: 'flex', gap: '40px', marginTop: '20px' }}>
-          {/* 2. Item List: Logic absorbed (handles filtering) */}
-          <div style={{ flex: 2 }}>
-            <POSItemList 
-              inventory={mockInventory} 
-              searchQuery={posSearch} 
-              onSelectItem={handleSelectItem} 
-            />
-          </div>
+      {/* Week 1 features */}
+      <KPIDisplay transactions={salesHistory} />
 
-          {/* 3. Cart: Logic absorbed (handles empty state & display) */}
-          <div style={{ flex: 1, borderLeft: '1px solid #ccc', paddingLeft: '20px' }}>
-            <POSCart cartItems={cartItems} />
-            
-            <button 
-              style={{ marginTop: '10px' }}
-              onClick={() => setCartItems([])}
-            >
-              Clear Sale
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Week 2 feature: Visualization */}
+      <SalesTrendChart data={salesHistory} />
 
-      {/* 
-         Independent Area for Other Members:
-         Erica (Inventory) and Roi (Analytics) components can be added 
-         above or below this div without affecting the POS state.
-      */}
-      
+      <hr style={{ margin: '30px 0' }} />
+
+      <TransactionHistory transactions={salesHistory} />
     </div>
   );
 }

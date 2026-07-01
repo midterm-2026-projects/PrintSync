@@ -20,18 +20,19 @@ import SalesTrendChart from './features/analytics/components/SalesTrendChart';
 import AIInsightArea from './features/analytics/components/AIInsightArea';
 
 function App() {
-  // --- STATE ---
+  // --- GLOBAL STATE ---
 
-  // 1. Inventory State
+  // 1. Inventory State (The source for the POS)
   const [inventory, setInventory] = useState([
     { id: '1', productName: "Cotton T-Shirt", stock: 50, price: 350, category: "Garment" },
     { id: '2', productName: "Vinyl Sticker", stock: 100, price: 50, category: "Material" }
   ]);
 
-  // 2. Design Gallery Mock Data
+  // 2. Mock Design Data for Gallery
   const [designs] = useState([
-    { id: 10, title: 'Sport Logo', url: 'https://via.placeholder.com/600/771796' },
-    { id: 11, title: 'Corporate Crest', url: 'https://via.placeholder.com/600/24f355' }
+    { id: 101, title: 'Team Logo', url: 'https://via.placeholder.com/600/771796' },
+    { id: 102, title: 'Summer Print', url: 'https://via.placeholder.com/600/24f355' },
+    { id: 103, title: 'Retro Badge', url: 'https://via.placeholder.com/600/d32776' }
   ]);
 
   // 3. POS States
@@ -47,73 +48,87 @@ function App() {
 
   // --- HANDLERS ---
 
-  // Inventory logic
-  const handleAddInventory = (newItem) => setInventory([...inventory, newItem]);
+  // Inventory logic: Adding item from Form
+  const handleAddInventory = (newItem) => {
+    setInventory([...inventory, newItem]);
+  };
 
-  // POS logic (W2D1 duplicate handling + W2D2 totals)
+  // POS logic: Add to cart (handling duplicates)
   const handleAddToCart = (item) => {
     setCart((prev) => {
       const exists = prev.find((c) => c.id === item.id);
-      if (exists) return prev.map((c) => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c);
+      if (exists) {
+        return prev.map((c) => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c);
+      }
       return [...prev, { ...item, quantity: 1 }];
     });
   };
 
+  // POS logic: Update quantities or remove
   const handleUpdateCartQty = (id, newQty) => {
     if (newQty < 1) setCart(cart.filter(i => i.id !== id));
     else setCart(cart.map(i => i.id === id ? { ...i, quantity: newQty } : i));
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h1>PRINTSYNC UNIFIED DASHBOARD</h1>
-        <p>Progress Update: Week 2, Day 2</p>
+    <div style={{ padding: '30px', maxWidth: '1300px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
+      <header style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h1>PRINTSYNC: A Cloud-Based Inventory & POS System</h1>
+        <p><strong>Capstone Project Progress Dashboard</strong></p>
       </header>
 
-      {/* --- OBJECTIVE 1: INVENTORY MANAGEMENT --- */}
-      <section style={{ border: '2px solid blue', padding: '20px', marginBottom: '40px' }}>
+      {/* --- OBJECTIVE 1: INVENTORY MANAGEMENT (ERICA) --- */}
+      <section style={{ border: '2px solid blue', padding: '20px', marginBottom: '30px', borderRadius: '8px' }}>
         <InventoryHeader itemCount={inventory.length} />
-        <div style={{ display: 'flex', gap: '20px' }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+          <div style={{ flex: '1' }}>
             <ItemForm onAdd={handleAddInventory} />
             <InventoryTable items={inventory} />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: '1', borderLeft: '1px solid #ccc', paddingLeft: '20px' }}>
             <DesignGallery designs={designs} />
           </div>
         </div>
       </section>
 
-      {/* --- OBJECTIVE 2: POINT-OF-SALE --- */}
-      <section style={{ border: '2px solid green', padding: '20px', marginBottom: '40px' }}>
-        <h2>POS Terminal</h2>
+      {/* --- OBJECTIVE 2: POINT-OF-SALE (LYELL) --- */}
+      <section style={{ border: '2px solid green', padding: '20px', marginBottom: '30px', borderRadius: '8px' }}>
+        <h2>POS Sales Terminal</h2>
         <POSSearchBar value={posSearch} onChange={setPosSearch} />
-        <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-          <div style={{ flex: 1 }}>
-            <POSItemList inventory={inventory} searchQuery={posSearch} onSelectItem={handleAddToCart} />
+        <div style={{ display: 'flex', gap: '30px', marginTop: '20px' }}>
+          <div style={{ flex: '1.5' }}>
+            <POSItemList 
+                inventory={inventory} 
+                searchQuery={posSearch} 
+                onSelectItem={handleAddToCart} 
+            />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: '1', backgroundColor: '#f9f9f9', padding: '15px' }}>
             <POSCart cartItems={cart} onUpdateQty={handleUpdateCartQty} />
+            {/* POSTotals now uses the POS Service internally for logic */}
             <POSTotals cartItems={cart} />
           </div>
         </div>
       </section>
 
-      {/* --- OBJECTIVE 3: AI-ASSISTED ANALYTICS --- */}
-      <section style={{ border: '2px solid purple', padding: '20px' }}>
+      {/* --- OBJECTIVE 3: ANALYTICS (ROI) --- */}
+      <section style={{ border: '2px solid purple', padding: '20px', borderRadius: '8px' }}>
         <AnalyticsHeader lastUpdated="2023-10-27" />
-        <div style={{ display: 'flex', gap: '20px' }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1', minWidth: '300px' }}>
             <KPIDisplay transactions={salesHistory} />
-            <SalesTrendChart data={salesHistory} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <AIInsightArea />
             <TransactionHistory transactions={salesHistory} />
+          </div>
+          <div style={{ flex: '1', minWidth: '400px' }}>
+            <SalesTrendChart data={salesHistory} />
+            <AIInsightArea />
           </div>
         </div>
       </section>
+      
+      <footer style={{ marginTop: '40px', textAlign: 'center', fontSize: '0.8rem', color: '#666' }}>
+        <p>© 2023 College of Informatics and Computing Sciences</p>
+      </footer>
     </div>
   );
 }

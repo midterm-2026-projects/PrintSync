@@ -1,24 +1,28 @@
 import React from 'react';
 
 const InventoryTable = ({ items }) => {
-  // Logic: Handle initialization state
-  if (!items || items.length === 0) {
+  // Initialization Logic: Handle null or empty array
+  const safeItems = items || [];
+
+  if (safeItems.length === 0) {
     return <p><i>Inventory is currently empty (Initialized State).</i></p>;
   }
 
   return (
-    <table border="1" style={{ width: '100%' }}>
+    <table border="1" style={{ width: '100%', textAlign: 'left' }}>
       <thead>
         <tr>
           <th>Product Name</th>
-          <th>Stock Quantity</th>
+          <th>Stock</th>
+          <th>Price</th>
         </tr>
       </thead>
       <tbody>
-        {items.map((item) => (
+        {safeItems.map((item) => (
           <tr key={item.id}>
             <td>{item.productName}</td>
             <td>{item.stock} units</td>
+            <td>₱{Number(item.price || 0).toFixed(2)}</td>
           </tr>
         ))}
       </tbody>

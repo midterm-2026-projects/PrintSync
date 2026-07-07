@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import generateTransactionId from "../../../features/pos/services/generateTransactionId";
+import generateTransactionId from "../../../features/pos/services/generatetransactionId";
  
 describe('generateTransactionId', () => {
   it('should return a string', () => {

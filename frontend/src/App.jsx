@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import InventoryHeader from './features/inventory/components/InventoryHeader';
 import ItemForm from './features/inventory/components/ItemForm';
 import InventoryTable from './features/inventory/components/InventoryTable';
+import DesignGallery from './features/inventory/components/DesignGallery';
+import InventoryFilter from './features/inventory/components/InventoryFilter';
 
 // --- POS COMPONENTS (Lyell) ---
 import POSSearchBar from "./features/pos/components/POSSearchBar";
@@ -88,16 +90,22 @@ function App() {
       {/* --- OBJECTIVE 1: INVENTORY MANAGEMENT (ERICA) --- */}
       <section style={{ border: '2px solid blue', padding: '20px', marginBottom: '30px', borderRadius: '8px' }}>
         <InventoryHeader itemCount={inventory.length} />
-        <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+
+        {/* Week 3 Day 1 - Inventory Filter */}
+        <InventoryFilter />
+
+        <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
           <div style={{ flex: '1' }}>
             <ItemForm onAdd={handleAddInventory} />
             <InventoryTable items={inventory} />
           </div>
+
           <div style={{ flex: '1', borderLeft: '1px solid #ccc', paddingLeft: '20px' }}>
             <DesignGallery designs={designs} />
           </div>
         </div>
       </section>
+      
 
       {/* --- OBJECTIVE 2: POINT-OF-SALE (LYELL) --- */}
       <section style={{ border: '2px solid green', padding: '20px', marginBottom: '30px', borderRadius: '8px' }}>
@@ -105,10 +113,10 @@ function App() {
         <POSSearchBar value={posSearch} onChange={setPosSearch} />
         <div style={{ display: 'flex', gap: '30px', marginTop: '20px' }}>
           <div style={{ flex: '1.5' }}>
-            <POSItemList 
-                inventory={inventory} 
-                searchQuery={posSearch} 
-                onSelectItem={handleAddToCart} 
+            <POSItemList
+              inventory={inventory}
+              searchQuery={posSearch}
+              onSelectItem={handleAddToCart}
             />
           </div>
           <div style={{ flex: '1', backgroundColor: '#f9f9f9', padding: '15px' }}>
@@ -138,7 +146,7 @@ function App() {
           </div>
         </div>
       </section>
-      
+
       <footer style={{ marginTop: '40px', textAlign: 'center', fontSize: '0.8rem', color: '#666' }}>
         <p>© 2023 College of Informatics and Computing Sciences</p>
       </footer>

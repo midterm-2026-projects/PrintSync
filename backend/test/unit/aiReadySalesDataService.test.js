@@ -34,16 +34,18 @@ describe("formatAiReadySalesData (with mocked model)", () => {
   });
 
   it("throws when totalSales is not a finite number", () => {
-    expect(() =>
-      formatAiReadySalesData({ date: "2026-07-01", totalSales: NaN })
-    ).toThrow(TypeError);
-
-    expect(() =>
-      formatAiReadySalesData({ date: "2026-07-01", totalSales: Infinity })
-    ).toThrow(TypeError);
-
+    expect(() => formatAiReadySalesData({ date: "2026-07-01", totalSales: NaN })).toThrow(TypeError);
+    expect(() => formatAiReadySalesData({ date: "2026-07-01", totalSales: Infinity })).toThrow(TypeError);
     expect(() =>
       formatAiReadySalesData({ date: "2026-07-01", totalSales: "10" })
     ).toThrow(TypeError);
+    expect(() => formatAiReadySalesData({ date: "2026-07-01", totalSales: undefined })).toThrow(TypeError);
+    expect(() => formatAiReadySalesData({ date: "2026-07-01", totalSales: null })).toThrow(TypeError);
+  });
+
+  it("throws when the whole input object is missing", () => {
+    expect(() => formatAiReadySalesData()).toThrow(TypeError);
+    // also explicit undefined
+    expect(() => formatAiReadySalesData(undefined)).toThrow(TypeError);
   });
 });

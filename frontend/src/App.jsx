@@ -6,11 +6,16 @@ import ItemForm from './features/inventory/components/ItemForm';
 import InventoryTable from './features/inventory/components/InventoryTable';
 import DesignGallery from './features/inventory/components/DesignGallery';
 import InventoryFilter from './features/inventory/components/InventoryFilter';
+
 // --- POS COMPONENTS (Lyell) ---
-import POSSearchBar from './features/pos/components/POSSearchBar';
+import POSSearchBar from "./features/pos/components/POSSearchBar";
 import POSItemList from './features/pos/components/POSItemList';
 import POSCart from './features/pos/components/POSCart';
 import POSTotals from './features/pos/components/POSTotals';
+import Checkoutmodal from './features/pos/components/Checkoutmodal';
+import Ordersummary from './features/pos/components/Ordersummary';
+import Receipt from './features/pos/components/Receipt';
+import Receiptitem from './features/pos/components/Receiptitem';
 
 // --- ANALYTICS COMPONENTS (Roi) ---
 import AnalyticsHeader from './features/analytics/components/AnalyticsHeader';
@@ -18,6 +23,8 @@ import KPIDisplay from './features/analytics/components/KPIDisplay';
 import TransactionHistory from './features/analytics/components/TransactionHistory';
 import SalesTrendChart from './features/analytics/components/SalesTrendChart';
 import AIInsightArea from './features/analytics/components/AIInsightArea';
+import ForecastPeriodSelector from './features/analytics/components/ForecastPeriodSelector';
+import PredictedDemandTable from './features/analytics/components/PredictedDemandTable';
 
 function App() {
   // --- GLOBAL STATE ---
@@ -45,6 +52,9 @@ function App() {
     { id: 'TXN-002', date: '2023-10-26', amount: 3000 },
     { id: 'TXN-003', date: '2023-10-27', amount: 1200 }
   ]);
+
+  // 5. Week 3 Day 1 Forecasting UI State
+  const [forecastPeriod, setForecastPeriod] = useState('30d');
 
   // --- HANDLERS ---
 
@@ -128,6 +138,11 @@ function App() {
           <div style={{ flex: '1', minWidth: '400px' }}>
             <SalesTrendChart data={salesHistory} />
             <AIInsightArea />
+
+            <div style={{ marginTop: '20px' }}>
+              <ForecastPeriodSelector value={forecastPeriod} onChange={setForecastPeriod} />
+              <PredictedDemandTable period={forecastPeriod} />
+            </div>
           </div>
         </div>
       </section>

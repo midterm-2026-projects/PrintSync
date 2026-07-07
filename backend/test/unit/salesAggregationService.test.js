@@ -1,29 +1,21 @@
 import { describe, it, expect, vi } from "vitest";
-import { aggregateSalesByDate } from "../../services/salesAggregationService";
+import {
+  aggregateSalesByDate,
+  aggregateSalesByDateFromDb,
+} from "../../services/salesAggregationService";
 
 vi.mock("../../models/salesAggregationModel.js", () => {
+  const queryOrdersByDate = vi.fn();
+  globalThis.__queryOrdersByDateSpy = queryOrdersByDate;
+
   return {
     default: {
-      toValidDate: vi.fn((input) => {
-        if (input === "not-a-date") throw new TypeError("Invalid date input");
-        return input;
-      }),
-      toLocalDayKey: vi.fn((dateLike) => {
-        if (typeof dateLike === "string") {
-          const m = dateLike.match(/^(\d{4}-\d{2}-\d{2})/);
-          return m ? m[1] : dateLike;
-        }
-        return String(dateLike);
-      }),
-      normalizeRowTotal: vi.fn((row) => {
-        if (!row) return NaN;
-        return typeof row.total === "string" ? Number(row.total) : row.total;
-      }),
+      queryOrdersByDate,
     },
   };
 });
 
-describe("aggregateSalesByDate (with mocked model helpers)", () => {
+describe("aggregateSalesByDate (pure aggregation from provided orders)", () => {
   it("sums totals for orders matching the target local calendar day", () => {
     const orders = [
       { createdAt: "2026-07-01T09:00:00", total: 100 },
@@ -58,13 +50,53 @@ describe("aggregateSalesByDate (with mocked model helpers)", () => {
     expect(() => aggregateSalesByDate(null, "2026-07-01T00:00:00")).toThrow(TypeError);
   });
 
-  it("works with Date instances (deterministic result under mocked helpers)", () => {
+  it("works with Date instances", () => {
     const orders = [
       { createdAt: new Date("2026-07-01T10:00:00"), total: 10 },
       { createdAt: new Date("2026-07-01T11:00:00"), total: 5 },
     ];
 
     const total = aggregateSalesByDate(orders, new Date("2026-07-01T00:00:00"));
-    expect(typeof total).toBe("number");
+    expect(total).toBe(15);
+  });
+});
+
+describe("aggregateSalesByDateFromDb (model query is mocked; service owns logic)", () => {
+  const getSpy = () => globalThis.__queryOrdersByDateSpy;
+
+  it("returns the aggregated sum for the queried target day", () => {
+    const spy = getSpy();
+    spy.mockClear();
+
+    spy.mockReturnValue([
+      { createdAt: "2026-07-01T09:00:00", total: 100 },
+      { createdAt: "2026-07-01T13:15:00", total: "50" },
+      { createdAt: "2026-07-02T01:00:00", total: 999 },
+    ]);
+
+    const total = aggregateSalesByDateFromDb("2026-07-01T00:00:00");
+    expect(total).toBe(150);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 0 when the model returns an empty array", () => {
+    const spy = getSpy();
+    spy.mockClear();
+
+    spy.mockReturnValue([]);
+
+    const total = aggregateSalesByDateFromDb("2026-07-01T00:00:00");
+    expect(total).toBe(0);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when model returns a non-array", () => {
+    const spy = getSpy();
+    spy.mockClear();
+
+    spy.mockReturnValue(null);
+
+    expect(() => aggregateSalesByDateFromDb("2026-07-01T00:00:00")).toThrow(TypeError);
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });

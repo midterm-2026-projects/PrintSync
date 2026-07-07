@@ -1,5 +1,22 @@
 import salesAggregationModel from "../models/salesAggregationModel.js";
 
+/**
+ * Service-layer helper: convert a Date to a local calendar day key (YYYY-MM-DD).
+ * (No validation/business-logic belongs in the model anymore.)
+ */
+function toLocalDayKey(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** Service-layer helper: normalize row totals from number|string => number. */
+function normalizeRowTotal(row) {
+  const value = typeof row.total === "string" ? Number(row.total) : row.total;
+  return value;
+}
+
 // Sales aggregation service: sums order row totals for a given target date.
 // Expected order row shape (minimal):
 //  - createdAt: Date|string
@@ -12,25 +29,46 @@ export function aggregateSalesByDate(orders, targetDate) {
     throw new TypeError("targetDate is required");
   }
 
-  // Validate target date first so invalid input throws even when orders is empty.
-  const target = salesAggregationModel.toValidDate(targetDate);
-  const targetKey = salesAggregationModel.toLocalDayKey(target);
+  const target = targetDate instanceof Date ? targetDate : new Date(targetDate);
+  if (!Number.isFinite(target.getTime())) {
+    throw new TypeError("Invalid date input");
+  }
+  const targetKey = toLocalDayKey(target);
 
-  // Happy-path behavior requested: if there are no orders, return 0.
+  // If there are no orders, return 0.
   if (orders.length === 0) return 0;
 
   let sum = 0;
   for (const row of orders) {
     if (!row) continue;
 
-    const rowDate = salesAggregationModel.toValidDate(row.createdAt);
-    if (salesAggregationModel.toLocalDayKey(rowDate) !== targetKey) continue;
+    const createdAt = row.createdAt instanceof Date ? row.createdAt : new Date(row.createdAt);
+    if (!Number.isFinite(createdAt.getTime())) continue;
 
-    const value = salesAggregationModel.normalizeRowTotal(row);
+    if (toLocalDayKey(createdAt) !== targetKey) continue;
+
+    const value = normalizeRowTotal(row);
     if (!Number.isFinite(value)) continue;
 
     sum += value;
   }
 
   return sum;
+}
+
+/**
+ * Week 4 Day 1: model role is query-only (DB not wired yet).
+ * Service role owns validation and business aggregation logic.
+ */
+export function aggregateSalesByDateFromDb(targetDate) {
+  if (!targetDate) {
+    throw new TypeError("targetDate is required");
+  }
+
+  const orders = salesAggregationModel.queryOrdersByDate(targetDate);
+  if (!Array.isArray(orders)) {
+    throw new TypeError("queryOrdersByDate must return an array");
+  }
+
+  return aggregateSalesByDate(orders, targetDate);
 }

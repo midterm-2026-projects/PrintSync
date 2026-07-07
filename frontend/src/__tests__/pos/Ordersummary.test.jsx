@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import OrderSummary from '../../features/pos/components/OrderSummary';
+import OrderSummary from '../../features/pos/components/Ordersummary';
 
 const mockCart = [
   { id: '1', productName: 'Cotton T-Shirt', price: 350, quantity: 2 },

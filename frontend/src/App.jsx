@@ -18,6 +18,8 @@ import KPIDisplay from './features/analytics/components/KPIDisplay';
 import TransactionHistory from './features/analytics/components/TransactionHistory';
 import SalesTrendChart from './features/analytics/components/SalesTrendChart';
 import AIInsightArea from './features/analytics/components/AIInsightArea';
+import ForecastPeriodSelector from './features/analytics/components/ForecastPeriodSelector';
+import PredictedDemandTable from './features/analytics/components/PredictedDemandTable';
 
 function App() {
   // --- GLOBAL STATE ---
@@ -45,6 +47,9 @@ function App() {
     { id: 'TXN-002', date: '2023-10-26', amount: 3000 },
     { id: 'TXN-003', date: '2023-10-27', amount: 1200 }
   ]);
+
+  // 5. Week 3 Day 1 Forecasting UI State
+  const [forecastPeriod, setForecastPeriod] = useState('30d');
 
   // --- HANDLERS ---
 
@@ -122,6 +127,11 @@ function App() {
           <div style={{ flex: '1', minWidth: '400px' }}>
             <SalesTrendChart data={salesHistory} />
             <AIInsightArea />
+
+            <div style={{ marginTop: '20px' }}>
+              <ForecastPeriodSelector value={forecastPeriod} onChange={setForecastPeriod} />
+              <PredictedDemandTable period={forecastPeriod} />
+            </div>
           </div>
         </div>
       </section>

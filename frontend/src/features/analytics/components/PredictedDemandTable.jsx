@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 
 const CATEGORIES = [
   { category: 'Cotton T-Shirt', baseQty: 60 },
@@ -32,7 +32,38 @@ const confidenceForPeriod = (period) => {
   }
 };
 
+const daysForPeriod = (period) => {
+  switch (period) {
+    case '7d':
+      return 7;
+    case '30d':
+      return 30;
+    case '90d':
+      return 90;
+    default:
+      return 30;
+  }
+};
+
+const formatDate = (date) => {
+  // MMM dd, yyyy (e.g., Jan 05, 2026)
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  }).format(date);
+};
+
+const addDaysInclusiveEnd = (startDate, days) => {
+  // inclusive: start=today, end=today + (days-1)
+  const end = new Date(startDate);
+  end.setDate(end.getDate() + (days - 1));
+  return end;
+};
+
 const PredictedDemandTable = ({ period = '30d' }) => {
+  const days = daysForPeriod(period);
+
   const rows = useMemo(() => {
     const mult = periodMultiplier(period);
 
@@ -43,9 +74,18 @@ const PredictedDemandTable = ({ period = '30d' }) => {
     });
   }, [period]);
 
+  const dateRangeLine = useMemo(() => {
+    const today = new Date();
+    const end = addDaysInclusiveEnd(today, days);
+    const startStr = formatDate(today);
+    const endStr = formatDate(end);
+    return `Predicted for next ${days} days (${startStr}\u2013${endStr})`;
+  }, [days]);
+
   return (
     <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '15px' }}>
       <h3 style={{ marginTop: 0 }}>Predicted Demand</h3>
+      <div style={{ marginBottom: '10px' }}>{dateRangeLine}</div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>

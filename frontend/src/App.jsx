@@ -4,13 +4,16 @@ import React, { useState } from 'react';
 import InventoryHeader from './features/inventory/components/InventoryHeader';
 import ItemForm from './features/inventory/components/ItemForm';
 import InventoryTable from './features/inventory/components/InventoryTable';
-import DesignGallery from './features/inventory/components/DesignGallery';
 
 // --- POS COMPONENTS (Lyell) ---
-import POSSearchBar from './features/pos/components/POSSearchBar';
+import POSSearchBar from "./features/pos/components/POSSearchBar";
 import POSItemList from './features/pos/components/POSItemList';
 import POSCart from './features/pos/components/POSCart';
 import POSTotals from './features/pos/components/POSTotals';
+import Checkoutmodal from './features/pos/components/Checkoutmodal';
+import Ordersummary from './features/pos/components/Ordersummary';
+import Receipt from './features/pos/components/Receipt';
+import Receiptitem from './features/pos/components/Receiptitem';
 
 // --- ANALYTICS COMPONENTS (Roi) ---
 import AnalyticsHeader from './features/analytics/components/AnalyticsHeader';

@@ -82,6 +82,11 @@ export const processTransaction = async (items) => {
 
 /**
  * Service-layer helper: convert a Date to a local calendar day key (YYYY-MM-DD).
+import salesAnalyticsModel from "../models/salesModel.js";
+
+/**
+ * Service-layer helper: convert a Date to a local calendar day key (YYYY-MM-DD).
+ * (No validation/business-logic belongs in the model anymore.)
  */
 function toLocalDayKey(d) {
   const year = d.getFullYear();
@@ -113,6 +118,7 @@ export function aggregateSalesByDate(orders, targetDate) {
   }
   const targetKey = toLocalDayKey(target);
 
+  // If there are no orders, return 0.
   if (orders.length === 0) return 0;
 
   let sum = 0;
@@ -135,6 +141,8 @@ export function aggregateSalesByDate(orders, targetDate) {
 
 /**
  * Logic to fetch from model and aggregate.
+ * Week 4 Day 1: model role is query-only (DB not wired yet).
+ * Service role owns validation and business aggregation logic.
  */
 export function aggregateSalesByDateFromDb(targetDate) {
   if (!targetDate) {
@@ -153,6 +161,12 @@ export function aggregateSalesByDateFromDb(targetDate) {
  * Build a flat JSON object compatible with Gemini prompt requirements.
  */
 export function formatAiReadySalesData(input = {}) {
+ *
+ * Business validation lives in the service (not the model).
+ * The model is query-only and is intentionally mocked in unit tests.
+ */
+export function formatAiReadySalesData(input = {}) {
+  // Service-layer validation (business logic)
   if (!input || typeof input !== "object") {
     throw new TypeError("input must be an object");
   }
@@ -164,13 +178,16 @@ export function formatAiReadySalesData(input = {}) {
     throw new TypeError("totalSales must be a finite number");
   }
 
+  // Model-layer "query/prep" stub (mocked in tests)
   const payload = salesAnalyticsModel.buildAiReadySalesDataPayload({
     date,
     totalSales,
   });
 
+  // Ensure the returned shape is the flat Gemini-compatible payload
   return {
     date: payload.date ?? date,
     totalSales: payload.totalSales ?? totalSales,
   };
+}
 }

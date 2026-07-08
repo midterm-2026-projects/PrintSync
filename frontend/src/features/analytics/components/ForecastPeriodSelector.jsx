@@ -2,7 +2,7 @@ import React from 'react';
 
 const DEFAULT_PERIOD = '30d';
 
-const ForecastPeriodSelector = ({ value = DEFAULT_PERIOD, onChange }) => {
+const ForecastPeriodSelector = ({ value = DEFAULT_PERIOD, onChange }) =>{
   const handleChange = (e) => {
     onChange?.(e.target.value);
   };

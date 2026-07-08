@@ -154,7 +154,7 @@ describe('PredictedDemandTable Forecasting UI (Week 3 Day 1)', () => {
     expect(confidenceCells).toHaveLength(3);
   });
 
-  it('should always render exactly 3 garment categories (3 rows of data)', () => {
+  it('should always render exactly 3 garment categories (3 rows of data)', () =>{
     render(<PredictedDemandTable period="90d" />);
 
     const categories = [

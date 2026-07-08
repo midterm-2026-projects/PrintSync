@@ -37,7 +37,7 @@ const multiplierForPeriod = (period) => {
 // but existing tests expect labels by timeframe.
 // We compute quality from regression input and then map label by quality.
 // For our deterministic points, quality is perfect; mapping yields stable labels.
-const confidenceLabelFromRegressionQuality = (qualityScore) => {
+const confidenceLabelFromRegressionQuality = (qualityScore) =>{
   if (qualityScore >= 0.95) return 'High';
   if (qualityScore >= 0.8) return 'Medium';
   return 'Low';

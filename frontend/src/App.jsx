@@ -7,15 +7,8 @@ import InventoryTable from './features/inventory/components/InventoryTable';
 import DesignGallery from './features/inventory/components/DesignGallery';
 import InventoryFilter from './features/inventory/components/InventoryFilter';
 
-// --- POS COMPONENTS (Lyell) ---
-import POSSearchBar from "./features/pos/components/POSSearchBar";
-import POSItemList from './features/pos/components/POSItemList';
-import POSCart from './features/pos/components/POSCart';
-import POSTotals from './features/pos/components/POSTotals';
-import Checkoutmodal from './features/pos/components/Checkoutmodal';
-import Ordersummary from './features/pos/components/Ordersummary';
-import Receipt from './features/pos/components/Receipt';
-import Receiptitem from './features/pos/components/Receiptitem';
+// --- POS (Lyell) ---
+import POS from './features/pos/pages/Pos';
 
 // --- ANALYTICS COMPONENTS (Roi) ---
 import AnalyticsHeader from './features/analytics/components/AnalyticsHeader';
@@ -42,11 +35,7 @@ function App() {
     { id: 103, title: 'Retro Badge', url: 'https://via.placeholder.com/600/d32776' }
   ]);
 
-  // 3. POS States
-  const [cart, setCart] = useState([]);
-  const [posSearch, setPosSearch] = useState("");
-
-  // 4. Analytics Mock History
+  // 3. Analytics Mock History
   const [salesHistory] = useState([
     { id: 'TXN-001', date: '2023-10-25', amount: 1500 },
     { id: 'TXN-002', date: '2023-10-26', amount: 3000 },
@@ -61,23 +50,6 @@ function App() {
   // Inventory logic: Adding item from Form
   const handleAddInventory = (newItem) => {
     setInventory([...inventory, newItem]);
-  };
-
-  // POS logic: Add to cart (handling duplicates)
-  const handleAddToCart = (item) => {
-    setCart((prev) => {
-      const exists = prev.find((c) => c.id === item.id);
-      if (exists) {
-        return prev.map((c) => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c);
-      }
-      return [...prev, { ...item, quantity: 1 }];
-    });
-  };
-
-  // POS logic: Update quantities or remove
-  const handleUpdateCartQty = (id, newQty) => {
-    if (newQty < 1) setCart(cart.filter(i => i.id !== id));
-    else setCart(cart.map(i => i.id === id ? { ...i, quantity: newQty } : i));
   };
 
   return (
@@ -109,22 +81,7 @@ function App() {
 
       {/* --- OBJECTIVE 2: POINT-OF-SALE (LYELL) --- */}
       <section style={{ border: '2px solid green', padding: '20px', marginBottom: '30px', borderRadius: '8px' }}>
-        <h2>POS Sales Terminal</h2>
-        <POSSearchBar value={posSearch} onChange={setPosSearch} />
-        <div style={{ display: 'flex', gap: '30px', marginTop: '20px' }}>
-          <div style={{ flex: '1.5' }}>
-            <POSItemList
-              inventory={inventory}
-              searchQuery={posSearch}
-              onSelectItem={handleAddToCart}
-            />
-          </div>
-          <div style={{ flex: '1', backgroundColor: '#f9f9f9', padding: '15px' }}>
-            <POSCart cartItems={cart} onUpdateQty={handleUpdateCartQty} />
-            {/* POSTotals now uses the POS Service internally for logic */}
-            <POSTotals cartItems={cart} />
-          </div>
-        </div>
+        <POS inventory={inventory} />
       </section>
 
       {/* --- OBJECTIVE 3: ANALYTICS (ROI) --- */}

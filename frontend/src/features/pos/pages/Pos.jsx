@@ -3,8 +3,8 @@ import POSSearchBar from '../components/POSSearchBar';
 import POSItemList from '../components/POSItemList';
 import POSCart from '../components/POSCart';
 import POSTotals from '../components/POSTotals';
-import OrderSummary from '../components/OrderSummary';
-import CheckoutModal from '../components/CheckoutModal';
+import OrderSummary from '../components/Ordersummary';
+import CheckoutModal from '../components/Checkoutmodal';
 import Receipt from '../components/Receipt';
 
 const POS = ({ inventory }) => {

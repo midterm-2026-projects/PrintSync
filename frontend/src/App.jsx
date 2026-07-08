@@ -8,7 +8,13 @@ import DesignGallery from './features/inventory/components/DesignGallery';
 import InventoryFilter from './features/inventory/components/InventoryFilter';
 
 // --- POS (Lyell) ---
-import POS from './features/pos/pages/Pos';
+import POSSearchBar from './features/pos/components/POSSearchBar';
+import POSItemList from './features/pos/components/POSItemList';
+import POSCart from './features/pos/components/POSCart';
+import POSTotals from './features/pos/components/POSTotals';
+import Ordersummary from './features/pos/components/Ordersummary';
+import Checkoutmodal from './features/pos/components/Checkoutmodal';
+import Receipt from './features/pos/components/Receipt';
 
 // --- ANALYTICS COMPONENTS (Roi) ---
 import AnalyticsHeader from './features/analytics/components/AnalyticsHeader';
@@ -35,7 +41,13 @@ function App() {
     { id: 103, title: 'Retro Badge', url: 'https://via.placeholder.com/600/d32776' }
   ]);
 
-  // 3. Analytics Mock History
+  // 3. POS States
+  const [cart, setCart] = useState([]);
+  const [posSearch, setPosSearch] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [receiptCart, setReceiptCart] = useState(null);
+
+  // 4. Analytics Mock History
   const [salesHistory] = useState([
     { id: 'TXN-001', date: '2023-10-25', amount: 1500 },
     { id: 'TXN-002', date: '2023-10-26', amount: 3000 },
@@ -51,6 +63,34 @@ function App() {
   const handleAddInventory = (newItem) => {
     setInventory([...inventory, newItem]);
   };
+
+  // POS handlers
+  const handleAddToCart = (item) => {
+    setCart((prev) => {
+      const exists = prev.find((c) => c.id === item.id);
+      if (exists) {
+        return prev.map((c) =>
+          c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
+        );
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+  };
+
+  const handleUpdateCartQty = (id, newQty) => {
+    if (newQty < 1) setCart((prev) => prev.filter((i) => i.id !== id));
+    else setCart((prev) => prev.map((i) => (i.id === id ? { ...i, quantity: newQty } : i)));
+  };
+
+  const handleCheckout = () => setShowModal(true);
+
+  const handleConfirm = () => {
+    setReceiptCart([...cart]);
+    setCart([]);
+    setShowModal(false);
+  };
+
+  const handleCloseReceipt = () => setReceiptCart(null);
 
   return (
     <div style={{ padding: '30px', maxWidth: '1300px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
@@ -81,7 +121,37 @@ function App() {
 
       {/* --- OBJECTIVE 2: POINT-OF-SALE (LYELL) --- */}
       <section style={{ border: '2px solid green', padding: '20px', marginBottom: '30px', borderRadius: '8px' }}>
-        <POS inventory={inventory} />
+        <h2>POS Sales Terminal</h2>
+
+        <POSSearchBar value={posSearch} onChange={setPosSearch} />
+
+        <div style={{ display: 'flex', gap: '30px', marginTop: '20px' }}>
+          <div style={{ flex: '1.5' }}>
+            <POSItemList
+              inventory={inventory}
+              searchQuery={posSearch}
+              onSelectItem={handleAddToCart}
+            />
+          </div>
+
+          <div style={{ flex: '1', backgroundColor: '#f9f9f9', padding: '15px' }}>
+            <POSCart cartItems={cart} onUpdateQty={handleUpdateCartQty} />
+            <POSTotals cartItems={cart} />
+            <Ordersummary cartItems={cart} onCheckout={handleCheckout} />
+          </div>
+        </div>
+
+        {showModal && (
+          <Checkoutmodal
+            cartItems={cart}
+            onConfirm={handleConfirm}
+            onCancel={() => setShowModal(false)}
+          />
+        )}
+
+        {receiptCart && (
+          <Receipt cartItems={receiptCart} onClose={handleCloseReceipt} />
+        )}
       </section>
 
       {/* --- OBJECTIVE 3: ANALYTICS (ROI) --- */}

@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// 1. Mock the consolidated salesModel
-// FIXED: Return the correct named exports (POS and Analytics) so they match your actual file
-vi.mock('../../models/salesModel', () => {
+vi.mock('../../models/salesModel.js', () => {
   return {
     salesPOSModel: {
       createOrder: vi.fn(),
@@ -16,12 +14,10 @@ vi.mock('../../models/salesModel', () => {
   };
 });
 
-// 2. Mock the transaction ID utility
-vi.mock('../../utils/generateTransactionId', () => ({
+vi.mock('../../utils/generateTransactionId.js', () => ({
   default: vi.fn(() => 'TXN-20231027-MOCK01'),
 }));
 
-// Import the functions to test
 import {
   validateOrderItems,
   calculateTotal,
@@ -30,57 +26,48 @@ import {
   aggregateSalesByDate,
   aggregateSalesByDateFromDb,
   formatAiReadySalesData,
-} from '../../services/salesService';
+} from '../../services/salesService.js';
 
-// Import the mocked models to control their behavior in tests
-// FIXED: We use these two names exclusively
-import { salesPOSModel, salesAnalyticsModel } from '../../models/salesModel';
+import { salesPOSModel, salesAnalyticsModel } from '../../models/salesModel.js';
 
 describe('Sales Service - POS Logic', () => {
   const mockItems = [
     { productId: '1', productName: 'Cotton T-Shirt', quantity: 2, unitPrice: 350 },
-    { productId: '2', productName: 'Vinyl Sticker',  quantity: 3, unitPrice: 50  },
+    { productId: '2', productName: 'Vinyl Sticker', quantity: 3, unitPrice: 50 },
   ];
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('validateOrderItems', () => {
-    it('should return null for valid items', () => {
-      expect(validateOrderItems(mockItems)).toBeNull();
-    });
-
-    it('should return an error if items array is empty', () => {
-      expect(validateOrderItems([])).toBe('Order must contain at least one item.');
-    });
-
-    it('should return an error if an item is missing productId', () => {
-      const bad = [{ productName: 'Test', quantity: 1, unitPrice: 100 }];
-      expect(validateOrderItems(bad)).toBe('Each item must have a productId and productName.');
-    });
+  it('should return null for valid items', () => {
+    expect(validateOrderItems(mockItems)).toBeNull();
   });
 
-  describe('calculateTotal', () => {
-    it('should correctly calculate the grand total (350*2 + 50*3 = 850)', () => {
-      expect(calculateTotal(mockItems)).toBe(850);
-    });
+  it('should return an error if items array is empty', () => {
+    expect(validateOrderItems([])).toBe('Order must contain at least one item.');
   });
 
-  describe('buildOrderItems', () => {
-    it('should map items into correct schema and preserve unit_price snapshots', () => {
-      const result = buildOrderItems('TXN-001', mockItems);
-      expect(result[0]).toMatchObject({
-        order_id: 'TXN-001',
-        unit_price: 350,
-        subtotal: 700,
-      });
+  it('should return an error if an item is missing productId', () => {
+    const bad = [{ productName: 'Test', quantity: 1, unitPrice: 100 }];
+    expect(validateOrderItems(bad)).toBe('Each item must have a productId and productName.');
+  });
+
+  it('should correctly calculate the grand total (350*2 + 50*3 = 850)', () => {
+    expect(calculateTotal(mockItems)).toBe(850);
+  });
+
+  it('should map items into correct schema and preserve unit_price snapshots', () => {
+    const result = buildOrderItems('TXN-001', mockItems);
+    expect(result[0]).toMatchObject({
+      order_id: 'TXN-001',
+      unit_price: 350,
+      subtotal: 700,
     });
   });
 
   describe('processTransaction', () => {
     beforeEach(() => {
-      // FIXED: Use salesPOSModel instead of salesModel
       salesPOSModel.createOrder.mockResolvedValue({
         order_id: 'TXN-20231027-MOCK01',
         total_amount: 850,
@@ -109,200 +96,98 @@ describe('Sales Service - Analytics Logic', () => {
   describe('aggregateSalesByDate', () => {
     it('sums totals for orders matching the target local calendar day', () => {
       const orders = [
-        { createdAt: "2026-07-01T09:00:00", total: 100 },
-        { createdAt: "2026-07-01T13:15:00", total: "50" },
-        { createdAt: "2026-07-02T01:00:00", total: 999 },
+        { createdAt: '2026-07-01T09:00:00', total: 100 },
+        { createdAt: '2026-07-01T13:15:00', total: '50' },
+        { createdAt: '2026-07-02T01:00:00', total: 999 },
       ];
-      const total = aggregateSalesByDate(orders, "2026-07-01T00:00:00");
+      const total = aggregateSalesByDate(orders, '2026-07-01T00:00:00');
       expect(total).toBe(150);
     });
 
+    it('returns 0 when orders array is empty (still validates targetDate)', () => {
+      const total = aggregateSalesByDate([], '2026-07-01T00:00:00');
+      expect(total).toBe(0);
+    });
+
     it('throws on invalid targetDate', () => {
-      expect(() => aggregateSalesByDate([], "not-a-date")).toThrow(TypeError);
+      expect(() => aggregateSalesByDate([], 'not-a-date')).toThrow(TypeError);
+    });
+
+    it('throws on invalid orders input type', () => {
+      expect(() => aggregateSalesByDate(null, '2026-07-01T00:00:00')).toThrow(TypeError);
+    });
+
+    it('works with Date instances', () => {
+      const orders = [
+        { createdAt: new Date('2026-07-01T10:00:00'), total: 10 },
+        { createdAt: new Date('2026-07-01T11:00:00'), total: 5 },
+      ];
+      const total = aggregateSalesByDate(orders, new Date('2026-07-01T00:00:00'));
+      expect(total).toBe(15);
     });
   });
 
   describe('aggregateSalesByDateFromDb', () => {
     it('calls the model and sums the returned rows', () => {
       salesAnalyticsModel.queryOrdersByDate.mockReturnValue([
-        { createdAt: "2026-07-01T09:00:00", total: 100 },
-        { createdAt: "2026-07-01T13:15:00", total: 50 },
+        { createdAt: '2026-07-01T09:00:00', total: 100 },
+        { createdAt: '2026-07-01T13:15:00', total: 50 },
       ]);
 
-      const total = aggregateSalesByDateFromDb("2026-07-01T00:00:00");
+      const total = aggregateSalesByDateFromDb('2026-07-01T00:00:00');
       expect(total).toBe(150);
-      expect(salesAnalyticsModel.queryOrdersByDate).toHaveBeenCalledWith("2026-07-01T00:00:00");
+      expect(salesAnalyticsModel.queryOrdersByDate).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns 0 when model returns empty array', () => {
+      salesAnalyticsModel.queryOrdersByDate.mockReturnValue([]);
+
+      const total = aggregateSalesByDateFromDb('2026-07-01T00:00:00');
+      expect(total).toBe(0);
+      expect(salesAnalyticsModel.queryOrdersByDate).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws when model returns non-array', () => {
+      salesAnalyticsModel.queryOrdersByDate.mockReturnValue(null);
+
+      expect(() => aggregateSalesByDateFromDb('2026-07-01T00:00:00')).toThrow(TypeError);
+      expect(salesAnalyticsModel.queryOrdersByDate).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('formatAiReadySalesData (AI Integration)', () => {
-    it('returns a flat Gemini-compatible JSON object', () => {
-      salesAnalyticsModel.buildAiReadySalesDataPayload.mockReturnValue({ 
-        date: "2026-07-01", 
-        totalSales: 150 
+    it('returns a flat Gemini-compatible JSON object (model is mocked)', () => {
+      salesAnalyticsModel.buildAiReadySalesDataPayload.mockReturnValue({
+        date: '2026-07-01',
+        totalSales: 150,
       });
 
-      const out = formatAiReadySalesData({ date: "2026-07-01", totalSales: 150 });
+      const out = formatAiReadySalesData({ date: '2026-07-01', totalSales: 150 });
 
-      expect(out).toEqual({ date: "2026-07-01", totalSales: 150 });
+      expect(out).toEqual({ date: '2026-07-01', totalSales: 150 });
       expect(salesAnalyticsModel.buildAiReadySalesDataPayload).toHaveBeenCalledTimes(1);
     });
 
-    it('throws when totalSales is not a finite number', () => {
-      expect(() => formatAiReadySalesData({ date: "2026-07-01", totalSales: NaN }))
-        .toThrow(TypeError);
+    it('throws when date is missing (and does not call the model)', () => {
+      expect(() => formatAiReadySalesData({ totalSales: 10 })).toThrow(TypeError);
       expect(salesAnalyticsModel.buildAiReadySalesDataPayload).not.toHaveBeenCalled();
     });
-  });
-});
-import { describe, it, expect, vi } from "vitest";
-import {
-  aggregateSalesByDate,
-  aggregateSalesByDateFromDb,
-  formatAiReadySalesData,
-} from "../../services/salesService";
 
-vi.mock("../../models/salesModel.js", () => {
-  const queryOrdersByDate = vi.fn();
-  const buildAiReadySalesDataPayload = vi.fn();
+    it('throws when totalSales is not a finite number (and does not call the model)', () => {
+      expect(() => formatAiReadySalesData({ date: '2026-07-01', totalSales: NaN })).toThrow(
+        TypeError
+      );
+      expect(salesAnalyticsModel.buildAiReadySalesDataPayload).not.toHaveBeenCalled();
+    });
 
-  globalThis.__queryOrdersByDateSpy = queryOrdersByDate;
-  globalThis.__buildAiReadySalesDataPayloadSpy = buildAiReadySalesDataPayload;
+    it('throws when input is missing (and does not call the model)', () => {
+      expect(() => formatAiReadySalesData(null)).toThrow(TypeError);
+      expect(salesAnalyticsModel.buildAiReadySalesDataPayload).not.toHaveBeenCalled();
+    });
 
-  return {
-    default: {
-      queryOrdersByDate,
-      buildAiReadySalesDataPayload,
-    },
-  };
-});
-
-describe("Sales aggregation (salesAnalyticsService)", () => {
-  const getQuerySpy = () => globalThis.__queryOrdersByDateSpy;
-
-  it("sums totals for orders matching the target local calendar day", () => {
-    const orders = [
-      { createdAt: "2026-07-01T09:00:00", total: 100 },
-      { createdAt: "2026-07-01T13:15:00", total: "50" },
-      { createdAt: "2026-07-02T01:00:00", total: 999 },
-    ];
-
-    const total = aggregateSalesByDate(orders, "2026-07-01T00:00:00");
-    expect(total).toBe(150);
-  });
-
-  it("returns 0 when orders array is empty (still validates targetDate)", () => {
-    const total = aggregateSalesByDate([], "2026-07-01T00:00:00");
-    expect(total).toBe(0);
-  });
-
-  it("throws on invalid targetDate", () => {
-    expect(() => aggregateSalesByDate([], "not-a-date")).toThrow(TypeError);
-  });
-
-  it("throws on invalid orders input type", () => {
-    expect(() => aggregateSalesByDate(null, "2026-07-01T00:00:00")).toThrow(
-      TypeError
-    );
-  });
-
-  it("works with Date instances", () => {
-    const orders = [
-      { createdAt: new Date("2026-07-01T10:00:00"), total: 10 },
-      { createdAt: new Date("2026-07-01T11:00:00"), total: 5 },
-    ];
-
-    const total = aggregateSalesByDate(orders, new Date("2026-07-01T00:00:00"));
-    expect(total).toBe(15);
-  });
-
-  it("aggregateSalesByDateFromDb sums mocked model rows", () => {
-    const spy = getQuerySpy();
-    spy.mockClear();
-
-    spy.mockReturnValue([
-      { createdAt: "2026-07-01T09:00:00", total: 100 },
-      { createdAt: "2026-07-01T13:15:00", total: "50" },
-      { createdAt: "2026-07-02T01:00:00", total: 999 },
-    ]);
-
-    const total = aggregateSalesByDateFromDb("2026-07-01T00:00:00");
-    expect(total).toBe(150);
-    expect(spy).toHaveBeenCalledTimes(1);
-  });
-
-  it("aggregateSalesByDateFromDb returns 0 when model returns empty array", () => {
-    const spy = getQuerySpy();
-    spy.mockClear();
-
-    spy.mockReturnValue([]);
-
-    const total = aggregateSalesByDateFromDb("2026-07-01T00:00:00");
-    expect(total).toBe(0);
-    expect(spy).toHaveBeenCalledTimes(1);
-  });
-
-  it("aggregateSalesByDateFromDb throws when model returns non-array", () => {
-    const spy = getQuerySpy();
-    spy.mockClear();
-
-    spy.mockReturnValue(null);
-
-    expect(() => aggregateSalesByDateFromDb("2026-07-01T00:00:00")).toThrow(
-      TypeError
-    );
-    expect(spy).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("AI-ready sales data (salesAnalyticsService)", () => {
-  const getBuildSpy = () => globalThis.__buildAiReadySalesDataPayloadSpy;
-
-  it("returns a flat Gemini-compatible JSON object (model is mocked)", () => {
-    const spy = getBuildSpy();
-    spy.mockClear();
-
-    spy.mockReturnValue({ date: "2026-07-01", totalSales: 150 });
-
-    const out = formatAiReadySalesData({ date: "2026-07-01", totalSales: 150 });
-
-    expect(out).toEqual({ date: "2026-07-01", totalSales: 150 });
-    expect(spy).toHaveBeenCalledTimes(1);
-  });
-
-  it("throws when date is missing (and does not call the model)", () => {
-    const spy = getBuildSpy();
-    spy.mockClear();
-
-    expect(() => formatAiReadySalesData({ totalSales: 10 })).toThrow(TypeError);
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it("throws when totalSales is not a finite number (and does not call the model)", () => {
-    const spy = getBuildSpy();
-    spy.mockClear();
-
-    expect(() => formatAiReadySalesData({ date: "2026-07-01", totalSales: NaN })).toThrow(
-      TypeError
-    );
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it("throws when input is missing (and does not call the model)", () => {
-    const spy = getBuildSpy();
-    spy.mockClear();
-
-    // input default is {}, so to hit the "missing whole input" behavior,
-    // we explicitly pass null.
-    expect(() => formatAiReadySalesData(null)).toThrow(TypeError);
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it("throws when input is not an object", () => {
-    const spy = getBuildSpy();
-    spy.mockClear();
-
-    expect(() => formatAiReadySalesData(123)).toThrow(TypeError);
-    expect(spy).not.toHaveBeenCalled();
+    it('throws when input is not an object', () => {
+      expect(() => formatAiReadySalesData(123)).toThrow(TypeError);
+      expect(salesAnalyticsModel.buildAiReadySalesDataPayload).not.toHaveBeenCalled();
+    });
   });
 });

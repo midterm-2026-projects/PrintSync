@@ -8,7 +8,7 @@ describe('ForecastPeriodSelector (Week 3 Day 1)', () => {
     expect(screen.getByLabelText(/Forecasting Period/i)).toBeInTheDocument();
   });
 
-  it('should call onChange with new value when timeframe is selected', () => {
+  it('should call onChange with new value when timeframe is selected', () =>{
     const onChange = vi.fn();
     render(<ForecastPeriodSelector value="30d" onChange={onChange} />);
 

@@ -1,4 +1,4 @@
-import salesAnalyticsModel from "../models/salesAnalyticsModel.js";
+import salesAnalyticsModel from "../models/salesModel.js";
 
 /**
  * Service-layer helper: convert a Date to a local calendar day key (YYYY-MM-DD).

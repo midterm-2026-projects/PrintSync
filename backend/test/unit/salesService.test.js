@@ -3,9 +3,9 @@ import {
   aggregateSalesByDate,
   aggregateSalesByDateFromDb,
   formatAiReadySalesData,
-} from "../../services/salesAnalyticsService";
+} from "../../services/salesService";
 
-vi.mock("../../models/salesAnalyticsModel.js", () => {
+vi.mock("../../models/salesModel.js", () => {
   const queryOrdersByDate = vi.fn();
   const buildAiReadySalesDataPayload = vi.fn();
 

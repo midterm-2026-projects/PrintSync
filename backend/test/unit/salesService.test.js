@@ -6,6 +6,7 @@ vi.mock('../../models/salesModel.js', () => {
       createOrder: vi.fn(),
       createOrderItems: vi.fn(),
       getOrderById: vi.fn(),
+      queryOrdersSortedByCreatedAtDesc: vi.fn(),
     },
     salesAnalyticsModel: {
       queryOrdersByDate: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock('../../models/salesModel.js', () => {
     },
   };
 });
+
 
 vi.mock('../../utils/generateTransactionId.js', () => ({
   default: vi.fn(() => 'TXN-20231027-MOCK01'),
@@ -26,9 +28,25 @@ import {
   aggregateSalesByDate,
   aggregateSalesByDateFromDb,
   formatAiReadySalesData,
+  finalizeSale,
+  getTransactionHistory,
 } from '../../services/salesService.js';
 
+
 import { salesPOSModel, salesAnalyticsModel } from '../../models/salesModel.js';
+
+vi.mock('../../models/ProductModel.js', () => {
+  return {
+    ProductModel: {
+      getItemById: vi.fn(),
+      updateStock: vi.fn(),
+      validateItemStructure: vi.fn(() => true),
+    },
+  };
+});
+
+import { ProductModel } from '../../models/ProductModel.js';
+
 
 describe('Sales Service - POS Logic', () => {
   const mockItems = [
@@ -86,7 +104,85 @@ describe('Sales Service - POS Logic', () => {
       expect(salesPOSModel.createOrder).not.toHaveBeenCalled();
     });
   });
+
+  describe('Week 4 Day 1 - stock deduction + finalizeSale + transaction history', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+
+
+      salesPOSModel.createOrder.mockResolvedValue({
+        order_id: 'TXN-20231027-MOCK01',
+        total_amount: 850,
+        created_at: '2023-10-27T10:00:00.000Z',
+      });
+
+      // Stub product stocks per product_id appearing in mockItems.
+      vi.mocked(ProductModel.getItemById).mockImplementation(async (id) => {
+        if (String(id) === '1') return { id: 1, name: 'Cotton T-Shirt', stock: 10 };
+        if (String(id) === '2') return { id: 2, name: 'Vinyl Sticker', stock: 10 };
+        return null;
+      });
+
+      // ProductService.modifyStockCount indirectly calls ProductModel.updateStock.
+      // We don't mock ProductService directly here, but we can validate updateStock calls.
+    });
+
+    it('finalizeSale should create order/order_items and deduct stock', async () => {
+      // Mock ProductModel.updateStock called via ProductService.modifyStockCount
+      vi.mocked(ProductModel.updateStock).mockImplementation(async (id, newStock) => {
+        return { id, stock: newStock };
+      });
+
+      const result = await finalizeSale(mockItems);
+
+      expect(result.orderId).toBe('TXN-20231027-MOCK01');
+      expect(salesPOSModel.createOrder).toHaveBeenCalledTimes(1);
+      expect(salesPOSModel.createOrderItems).toHaveBeenCalledTimes(1);
+
+      // mockItems quantities: product 1 qty=2 -> 10-2=8, product 2 qty=3 -> 10-3=7
+      expect(ProductModel.updateStock).toHaveBeenCalledWith('1', 8);
+      expect(ProductModel.updateStock).toHaveBeenCalledWith('2', 7);
+
+    });
+
+    it('finalizeSale should throw on insufficient stock', async () => {
+      vi.mocked(ProductModel.getItemById).mockImplementation(async (id) => {
+        if (String(id) === '1') return { id: 1, name: 'Cotton T-Shirt', stock: 1 }; // insufficient (needs 2)
+        if (String(id) === '2') return { id: 2, name: 'Vinyl Sticker', stock: 10 };
+        return null;
+      });
+
+      await expect(finalizeSale(mockItems)).rejects.toThrow('Insufficient stock for product 1');
+      expect(salesPOSModel.createOrderItems).toHaveBeenCalledTimes(1);
+      expect(ProductModel.updateStock).not.toHaveBeenCalled();
+    });
+
+    it('finalizeSale should throw if product is missing', async () => {
+      vi.mocked(ProductModel.getItemById).mockResolvedValue(null);
+
+      await expect(finalizeSale(mockItems)).rejects.toThrow('Product not found for id 1');
+    });
+
+
+    it('getTransactionHistory should return orders as returned by model (expected DESC)', async () => {
+      salesPOSModel.queryOrdersSortedByCreatedAtDesc.mockResolvedValue([
+        { order_id: 'A', created_at: '2023-10-27T12:00:00.000Z', total_amount: 10 },
+        { order_id: 'B', created_at: '2023-10-27T10:00:00.000Z', total_amount: 5 },
+      ]);
+
+      const history = await getTransactionHistory();
+      expect(history).toHaveLength(2);
+      expect(history[0].order_id).toBe('A');
+    });
+
+    it('getTransactionHistory should throw if model returns non-array', async () => {
+      salesPOSModel.queryOrdersSortedByCreatedAtDesc.mockResolvedValue(null);
+
+      await expect(getTransactionHistory()).rejects.toThrow(TypeError);
+    });
+  });
 });
+
 
 describe('Sales Service - Analytics Logic', () => {
   beforeEach(() => {

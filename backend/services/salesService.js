@@ -78,6 +78,107 @@ export const processTransaction = async (items) => {
   };
 };
 
+/**
+ * Week 4 Day 1: Stock deduction for finalized sales.
+ *
+ * Stock deduction logic is intentionally service-layer-only and relies on
+ * ProductModel/ProductService stubs being mocked in unit tests.
+ */
+export const deductStockForOrderItems = async (orderItems) => {
+  if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
+    throw new Error('Order items must be a non-empty array');
+  }
+
+  // Lazy-load to reduce risk of circular dependencies.
+  const { ProductService } = await import('./ProductService.js');
+
+
+  for (const line of orderItems) {
+    const { product_id, quantity } = line || {};
+
+    if (product_id === undefined || product_id === null) {
+      throw new Error('Each order item must have product_id');
+    }
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      throw new Error('Each order item must have an integer quantity of at least 1');
+    }
+
+    // ProductService has update-by-setting semantics currently (modifyStockCount).
+    // Deduction requires reading current stock then applying (current - qty).
+    const { ProductModel } = await import('../models/ProductModel.js');
+    const product = await ProductModel.getItemById(product_id);
+
+
+    if (!product) {
+      throw new Error(`Product not found for id ${product_id}`);
+    }
+
+    const currentStock = product.stock;
+    if (!Number.isInteger(currentStock)) {
+      throw new Error(`Invalid stock value for product ${product_id}`);
+    }
+
+    if (currentStock < quantity) {
+      throw new Error(`Insufficient stock for product ${product_id}`);
+    }
+
+    const newStock = currentStock - quantity;
+    await ProductService.modifyStockCount(product_id, newStock);
+
+  }
+
+  return true;
+};
+
+/**
+ * Week 4 Day 1: Combined finalize sale operation.
+ * - Creates order + order_items (existing processTransaction behavior)
+ * - Deducts inventory stock for each line item
+ *
+ * Returns a payload containing created order data.
+ */
+export const finalizeSale = async (items) => {
+  // Reuse existing POS validation + create behavior.
+  const validationError = validateOrderItems(items);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const totalAmount = calculateTotal(items);
+  const orderId = generateTransactionId();
+
+  const savedOrder = await salesPOSModel.createOrder(orderId, totalAmount);
+
+  const orderItems = buildOrderItems(orderId, items);
+  await salesPOSModel.createOrderItems(orderId, orderItems);
+
+  await deductStockForOrderItems(orderItems);
+
+  return {
+    orderId: savedOrder.order_id,
+    totalAmount: savedOrder.total_amount,
+    createdAt: savedOrder.created_at,
+    orderItems,
+  };
+};
+
+/**
+ * Week 4 Day 1: Retrieve transaction history (most recent first).
+ * The model is expected to be mocked in unit tests.
+ */
+export const getTransactionHistory = async () => {
+  const { salesPOSModel } = await import('../models/salesModel.js');
+
+  const orders = await salesPOSModel.queryOrdersSortedByCreatedAtDesc();
+  if (!Array.isArray(orders)) {
+    throw new TypeError('queryOrdersSortedByCreatedAtDesc must return an array');
+  }
+
+  return orders;
+};
+
+
+
 // ==========================================
 // --- ANALYTICS SERVICE LOGIC ---
 // ==========================================

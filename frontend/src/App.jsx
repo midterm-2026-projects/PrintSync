@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 // --- INVENTORY COMPONENTS (Erica) ---
 import InventoryHeader from './features/inventory/components/InventoryHeader';
@@ -15,6 +15,9 @@ import POSTotals from './features/pos/components/POSTotals';
 import Ordersummary from './features/pos/components/Ordersummary';
 import Checkoutmodal from './features/pos/components/Checkoutmodal';
 import Receipt from './features/pos/components/Receipt';
+import TransactionHistoryDetail from './features/pos/components/TransactionHistoryDetail';
+import OrderStatusTracker from './features/pos/components/OrderStatusTracker';
+import OrderProgressIndicator from './features/pos/components/OrderProgressIndicator';
 
 // --- ANALYTICS COMPONENTS (Roi) ---
 import AnalyticsHeader from './features/analytics/components/AnalyticsHeader';
@@ -33,6 +36,9 @@ function App() {
     { id: '1', productName: "Cotton T-Shirt", stock: 50, price: 350, category: "Garment" },
     { id: '2', productName: "Vinyl Sticker", stock: 100, price: 50, category: "Material" }
   ]);
+
+  // Inventory list shown in the table (driven by InventoryFilter)
+  const [filteredInventory, setFilteredInventory] = useState(inventory);
 
   // 2. Mock Design Data for Gallery
   const [designs] = useState([
@@ -56,6 +62,33 @@ function App() {
 
   // 5. Week 3 Day 1 Forecasting UI State
   const [forecastPeriod, setForecastPeriod] = useState('30d');
+
+  // 6. Week 4 Mock Data - Transaction History & Order Status
+  const [transactions] = useState([
+    {
+      id: 'TXN-20260715-ABC123',
+      timestamp: '2026-07-15T14:30:00',
+      totalAmount: 700.00,
+      status: 'Completed',
+      itemsCount: 2
+    },
+    {
+      id: 'TXN-20260715-DEF456',
+      timestamp: '2026-07-15T12:15:00',
+      totalAmount: 1050.50,
+      status: 'Completed',
+      itemsCount: 3
+    },
+    {
+      id: 'TXN-20260715-GHI789',
+      timestamp: '2026-07-15T10:45:00',
+      totalAmount: 350.00,
+      status: 'Pending',
+      itemsCount: 1
+    }
+  ]);
+  const [currentOrderStatus, setCurrentOrderStatus] = useState('Pending');
+  const [currentOrderId] = useState('TXN-20260715-ABC123');
 
   // --- HANDLERS ---
 
@@ -104,12 +137,12 @@ function App() {
         <InventoryHeader itemCount={inventory.length} />
 
         {/* Week 3 Day 1 - Inventory Filter */}
-        <InventoryFilter />
+        <InventoryFilter items={inventory} onFilteredItems={setFilteredInventory} />
 
         <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
           <div style={{ flex: '1' }}>
             <ItemForm onAdd={handleAddInventory} />
-            <InventoryTable items={inventory} />
+            <InventoryTable items={filteredInventory} />
           </div>
 
           <div style={{ flex: '1', borderLeft: '1px solid #ccc', paddingLeft: '20px' }}>
@@ -138,6 +171,35 @@ function App() {
             <POSCart cartItems={cart} onUpdateQty={handleUpdateCartQty} />
             <POSTotals cartItems={cart} />
             <Ordersummary cartItems={cart} onCheckout={handleCheckout} />
+          </div>
+        </div>
+
+        {showModal && (
+          <Checkoutmodal
+            cartItems={cart}
+            onConfirm={handleConfirm}
+            onCancel={() => setShowModal(false)}
+          />
+        )}
+
+        {receiptCart && (
+          <Receipt cartItems={receiptCart} onClose={handleCloseReceipt} />
+        )}
+
+        {/* --- WEEK 4: Transaction History & Order Tracking --- */}
+        <div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div style={{ backgroundColor: '#f0f8ff', padding: '15px', borderRadius: '8px' }}>
+            <TransactionHistoryDetail transactions={transactions} />
+          </div>
+          <div style={{ backgroundColor: '#fffef0', padding: '15px', borderRadius: '8px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <OrderStatusTracker orderStatus={currentOrderStatus} orderId={currentOrderId} />
+              <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                <button onClick={() => setCurrentOrderStatus('Pending')} style={{ padding: '8px 16px' }}>Set Pending</button>
+                <button onClick={() => setCurrentOrderStatus('Completed')} style={{ padding: '8px 16px' }}>Set Completed</button>
+              </div>
+            </div>
+            <OrderProgressIndicator currentStatus={currentOrderStatus} orderId={currentOrderId} />
           </div>
         </div>
 

@@ -1,36 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-// Mock data based on Week 1 & 2 definitions for testing/preview purposes
-const INITIAL_INVENTORY = [
-  { id: 1, name: 'Premium Cotton T-Shirt', category: 'Garment', stock: 45, price: 12.99 },
-  { id: 2, name: 'Polyester Sports Jersey', category: 'Garment', stock: 8, price: 15.50 },
-  { id: 3, name: 'Sublimation Ink Set (CMYK)', category: 'Material', stock: 12, price: 45.00 },
-  { id: 4, name: 'Heavy Cotton Hoodie', category: 'Garment', stock: 20, price: 28.00 },
-  { id: 5, name: 'A4 Transfer Paper (100pcs)', category: 'Material', stock: 0, price: 18.75 },
-];
-
+// Keep the filter buttons stable even if the incoming inventory categories differ.
 const CATEGORIES = ['All', 'Garment', 'Material'];
 
-export default function InventoryFilter() {
-  // State management for filters
+export default function InventoryFilter({ items = [], onFilteredItems }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // Real-time filtering logic using useMemo for performance optimization
-  const filteredInventory = useMemo(() => {
-    return INITIAL_INVENTORY.filter((item) => {
-      // 1. Case-insensitive text search by item name
-      const matchesSearch = item.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+  const filteredItems = useMemo(() => {
+    const safeItems = items || [];
+    return safeItems.filter((item) => {
+      const name = (item?.productName ?? '').toLowerCase();
+      const category = item?.category ?? '';
 
-      // 2. Category filter matching
+      const matchesSearch = name.includes(searchQuery.toLowerCase());
       const matchesCategory =
-        selectedCategory === 'All' || item.category === selectedCategory;
+        selectedCategory === 'All' || category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [items, searchQuery, selectedCategory]);
+
+  useEffect(() => {
+    if (typeof onFilteredItems === 'function') onFilteredItems(filteredItems);
+  }, [filteredItems, onFilteredItems]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-white rounded-xl shadow-md space-y-6">
@@ -44,7 +37,9 @@ export default function InventoryFilter() {
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b pb-4">
         {/* Sub-task 1: Text-based Search Bar */}
         <div className="w-full sm:w-1/2">
-          <label htmlFor="search" className="sr-only">Search Items</label>
+          <label htmlFor="search" className="sr-only">
+            Search Items
+          </label>
           <input
             id="search"
             type="text"
@@ -76,29 +71,10 @@ export default function InventoryFilter() {
         </div>
       </div>
 
-      {/* Dynamic Item Grid / List View */}
-      <div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredInventory.map((item) => (
-            <div 
-              key={item.id} 
-              className="p-4 border rounded-lg hover:shadow-sm transition-shadow flex justify-between items-center"
-            >
-              <div>
-                <h4 className="font-semibold text-gray-800">{item.name}</h4>
-                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold bg-gray-200 text-gray-700 rounded-full">
-                  {item.category}
-                </span>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Stock</p>
-                <p className="font-bold text-gray-800">
-                  {item.stock} units
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Intentionally no item grid/list here.
+          The inventory list now lives in InventoryTable, which receives filtered items from the parent. */}
+      <div className="text-sm text-gray-600">
+        {filteredItems.length} item(s) matched.
       </div>
     </div>
   );

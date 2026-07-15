@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import React from 'react';
 import InventoryTable from '../../features/inventory/components/InventoryTable';
 
 describe('InventoryTable Component', () => {
@@ -10,9 +9,13 @@ describe('InventoryTable Component', () => {
   });
 
   it('should correctly render provided inventory items', () => {
-    const mockItems = [{ id: '1', productName: 'Ink', stock: 10, category: 'Material' }];
+    const mockItems = [
+      { id: '1', productName: 'Ink', category: 'Material', stock: 10, price: 18.75 },
+    ];
     render(<InventoryTable items={mockItems} />);
     expect(screen.getByText('Ink')).toBeInTheDocument();
+    expect(screen.getByText('Material')).toBeInTheDocument();
     expect(screen.getByText('10 units')).toBeInTheDocument();
+    expect(screen.getByText('₱18.75')).toBeInTheDocument();
   });
 });

@@ -11,41 +11,48 @@ const Receipt = ({ cartItems, onClose }) => {
   }, []);
 
   const now = new Date();
-  
+
   // Requirement: Calculate grand total (₱750 for the mock data)
-  const grandTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const grandTotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const formatMoney = (value) => value.toLocaleString();
 
   return (
     <div aria-label="receipt">
       <h1>Receipt</h1>
 
-      <p>
-        <strong>ID:</strong>{' '}
-        <span aria-label="transaction id">{transactionId}</span>
-      </p>
+      <dl>
+        <div>
+          <dt>ID</dt>
+          <dd aria-label="transaction id">{transactionId}</dd>
+        </div>
+        <div>
+          <dt>Date</dt>
+          <dd aria-label="receipt date">{now.toLocaleDateString()}</dd>
+        </div>
+        <div>
+          <dt>Time</dt>
+          <dd aria-label="receipt time">
+            {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+          </dd>
+        </div>
+      </dl>
 
-      <p>
-        <strong>Date:</strong>{' '}
-        <span aria-label="receipt date">{now.toLocaleDateString()}</span>
-      </p>
-
-      <p>
-        <strong>Time:</strong>{' '}
-        <span aria-label="receipt time">
-          {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-        </span>
-      </p>
-
-      <ul>
+      <ul aria-label="receipt items">
         {cartItems.map((item) => (
           <ReceiptItem key={item.id} item={item} />
         ))}
       </ul>
 
-      <div>
-        <strong>Total:</strong>{' '}
-        <span aria-label="receipt grand total">₱{grandTotal}</span>
-      </div>
+      <dl>
+        <div>
+          <dt>Total</dt>
+          <dd aria-label="receipt grand total">₱{formatMoney(grandTotal)}</dd>
+        </div>
+      </dl>
 
       <button aria-label="Close receipt" onClick={onClose}>
         Close

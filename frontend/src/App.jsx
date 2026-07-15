@@ -202,6 +202,18 @@ function App() {
             <OrderProgressIndicator currentStatus={currentOrderStatus} orderId={currentOrderId} />
           </div>
         </div>
+
+        {showModal && (
+          <Checkoutmodal
+            cartItems={cart}
+            onConfirm={handleConfirm}
+            onCancel={() => setShowModal(false)}
+          />
+        )}
+
+        {receiptCart && (
+          <Receipt cartItems={receiptCart} onClose={handleCloseReceipt} />
+        )}
       </section>
 
       {/* --- OBJECTIVE 3: ANALYTICS (ROI) --- */}

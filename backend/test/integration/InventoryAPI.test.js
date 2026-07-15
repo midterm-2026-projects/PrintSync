@@ -102,7 +102,8 @@ describe('inventory API (routes to controllers to mocked services)', () => {
     it('returns an item from the service', async () => {
       vi.mocked(InventoryService.getItemById).mockResolvedValue(mockItem);
 
-      const response = await request(app).get(/inventory/items / ${ mockItem.id });
+      const response = await request(app).get(`/inventory/items/${mockItem.id}`);
+
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ ok: true, item: mockItem });
@@ -125,8 +126,9 @@ describe('inventory API (routes to controllers to mocked services)', () => {
       vi.mocked(InventoryService.updateItem).mockResolvedValue(updatedItem);
 
       const response = await request(app)
-        .put(/inventory/items / ${ mockItem.id })
+        .put(`/inventory/items/${mockItem.id}`)
         .send({ stock: 15, price: 150 });
+
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ ok: true, item: updatedItem });
@@ -141,7 +143,8 @@ describe('inventory API (routes to controllers to mocked services)', () => {
     it('deletes an item through the service', async () => {
       vi.mocked(InventoryService.deleteItem).mockResolvedValue(mockItem);
 
-      const response = await request(app).delete(/inventory/items / ${ mockItem.id });
+      const response = await request(app).delete(`/inventory/items/${mockItem.id}`);
+
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ ok: true, message: 'Item deleted successfully' });
@@ -185,7 +188,8 @@ describe('inventory API (routes to controllers to mocked services)', () => {
     it('deletes a design through the service', async () => {
       vi.mocked(InventoryService.deleteDesign).mockResolvedValue(mockDesign);
 
-      const response = await request(app).delete(/inventory/designs / ${ mockDesign.id });
+      const response = await request(app).delete(`/inventory/designs/${mockDesign.id}`);
+
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ ok: true, message: 'Design deleted successfully' });

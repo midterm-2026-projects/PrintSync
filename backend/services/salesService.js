@@ -5,6 +5,43 @@
 import { salesPOSModel, salesAnalyticsModel } from '../models/salesModel.js';
 import generateTransactionId from '../utils/generateTransactionId.js';
 
+/**
+ * Determines whether a given router path corresponds to the finalize endpoint.
+ * Used to let a single controller handler serve both POST /transactions and
+ * POST /finalize.
+ */
+export function isFinalizePath(routePath) {
+  return routePath === '/finalize';
+}
+
+/**
+ * normalizeItemsPayload (moved from salesController)
+ * Accept either:
+ * - [{ productId, productName, quantity, unitPrice }]
+ * - or already-normalized fields using snake_case variants
+ *
+ * Returns null if `items` is not an array.
+ */
+export function normalizeItemsPayload(items) {
+  // Accept either:
+  // - [{ productId, productName, quantity, unitPrice }]
+  // - or already-normalized fields
+  if (!Array.isArray(items)) return null;
+
+  const normalized = items.map((it) => {
+    if (!it || typeof it !== 'object') return it;
+
+    return {
+      productId: it.productId ?? it.product_id,
+      productName: it.productName ?? it.product_name,
+      quantity: it.quantity,
+      unitPrice: it.unitPrice ?? it.unit_price,
+    };
+  });
+
+  return normalized;
+}
+
 // ==========================================
 // --- POS SERVICE LOGIC ---
 // ==========================================
@@ -107,7 +144,6 @@ export const deductStockForOrderItems = async (orderItems) => {
     // Deduction requires reading current stock then applying (current - qty).
     const { ProductModel } = await import('../models/ProductModel.js');
     const product = await ProductModel.getItemById(product_id);
-
 
     if (!product) {
       throw new Error(`Product not found for id ${product_id}`);

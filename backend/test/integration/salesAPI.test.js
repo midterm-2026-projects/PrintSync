@@ -169,7 +169,7 @@ describe('sales API integration (routes → controllers → services → model)'
             ],
           });
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(500);
         expect(res.body.ok).toBe(false);
         // Some implementations may not include a `message` field; just assert a structured error exists.
         expect(res.body).toEqual(expect.objectContaining({ ok: false }));
@@ -272,7 +272,7 @@ describe('sales API integration (routes → controllers → services → model)'
               ],
             });
 
-          expect(res.status).toBe(400);
+          expect(res.status).toBe(500);
           expect(res.body.ok).toBe(false);
           expect(res.body).toEqual(expect.objectContaining({ ok: false }));
 

@@ -30,6 +30,7 @@ import {
   formatAiReadySalesData,
   finalizeSale,
   getTransactionHistory,
+  isFinalizePath,
 } from '../../services/salesService.js';
 
 
@@ -49,6 +50,12 @@ import { ProductModel } from '../../models/ProductModel.js';
 
 
 describe('Sales Service - POS Logic', () => {
+  it('isFinalizePath should return true only for /finalize', () => {
+    expect(isFinalizePath('/finalize')).toBe(true);
+    expect(isFinalizePath('/transactions')).toBe(false);
+    expect(isFinalizePath(undefined)).toBe(false);
+    expect(isFinalizePath(null)).toBe(false);
+  });
   const mockItems = [
     { productId: '1', productName: 'Cotton T-Shirt', quantity: 2, unitPrice: 350 },
     { productId: '2', productName: 'Vinyl Sticker', quantity: 3, unitPrice: 50 },

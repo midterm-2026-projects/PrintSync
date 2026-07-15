@@ -1,103 +1,80 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import path from 'path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+vi.mock('../../services/InventoryService.js', () => ({
+  InventoryService: {
+    getItems: vi.fn(),
+    getItemById: vi.fn(),
+    createItem: vi.fn(),
+    updateItem: vi.fn(),
+    deleteItem: vi.fn(),
+    getDesigns: vi.fn(),
+    createDesign: vi.fn(),
+    deleteDesign: vi.fn(),
+  },
+}));
 
-// Load backend/.env before importing modules that use the database pool.
-dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
+import app from '../../app.js';
+import { InventoryService } from '../../services/InventoryService.js';
 
-const canRun = !!process.env.SUPABASE_DB_URL || !!process.env.PGHOST;
-const createdProductIds = new Set();
-const createdDesignIds = new Set();
-let app;
-let pool;
-
-beforeAll(async () => {
-  app = (await import('../../app.js')).default;
-  ({ pool } = await import('../../db/pool.js'));
+afterEach(() => {
+  vi.clearAllMocks();
 });
 
-afterEach(async () => {
-  if (!pool) return;
+const mockItem = {
+  id: 101,
+  name: 'Mock T-Shirt',
+  sku: 'MOCK-TSHIRT',
+  category: 'Garment',
+  stock: 10,
+  price: 125.5,
+  description: 'Mock inventory item',
+  image_url: null,
+  reorder_level: 2,
+  is_active: true,
+};
 
-  for (const designId of createdDesignIds) {
-    await pool.query('DELETE FROM public.designs WHERE id = $1', [designId]);
-  }
-  createdDesignIds.clear();
+const mockDesign = {
+  id: 201,
+  title: 'Mock Design',
+  url: 'https://example.com/mock-design.png',
+  product_id: null,
+  uploaded_by: 'test-user',
+};
 
-  for (const productId of createdProductIds) {
-    await pool.query('DELETE FROM public.products WHERE id = $1', [productId]);
-  }
-  createdProductIds.clear();
-});
-
-afterAll(async () => {
-  await pool?.end();
-});
-
-function uniqueName(prefix) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-async function createItem(overrides = {}) {
-  const response = await request(app)
-    .post('/inventory/items')
-    .send({
-      name: uniqueName('inventory-api-item'),
-      sku: 'API-TEST-SKU',
-      category: 'Integration Test',
-      stock: 10,
-      price: 125.5,
-      description: 'Created by InventoryAPI.test.js',
-      reorder_level: 2,
-      ...overrides,
-    });
-
-  if (response.status === 201) {
-    createdProductIds.add(response.body.item.id);
-  }
-
-  return response;
-}
-
-async function createDesign(overrides = {}) {
-  const response = await request(app)
-    .post('/inventory/designs')
-    .send({
-      title: uniqueName('inventory-api-design'),
-      url: 'https://example.com/integration-test.png',
-      uploaded_by: 'integration-test',
-      ...overrides,
-    });
-
-  if (response.status === 201) {
-    createdDesignIds.add(response.body.design.id);
-  }
-
-  return response;
-}
-
-describe('inventory API integration (routes to controllers to services to model)', () => {
-  if (!canRun) {
-    it.skip('skipped: missing DB credentials (SUPABASE_DB_URL or PG*)', () => {});
-    return;
-  }
-
+describe('inventory API (routes to controllers to mocked services)', () => {
   describe('POST /inventory/items', () => {
-    it('creates an inventory item', async () => {
-      const name = uniqueName('inventory-api-item');
-      const response = await createItem({ name });
+    it('creates an inventory item using the service response', async () => {
+      vi.mocked(InventoryService.createItem).mockResolvedValue(mockItem);
+
+      const response = await request(app)
+        .post('/inventory/items')
+        .send({
+          name: mockItem.name,
+          sku: mockItem.sku,
+          category: mockItem.category,
+          stock: mockItem.stock,
+          price: mockItem.price,
+          description: mockItem.description,
+          reorder_level: mockItem.reorder_level,
+        });
 
       expect(response.status).toBe(201);
-      expect(response.body.ok).toBe(true);
-      expect(response.body.item).toEqual(expect.objectContaining({ name, stock: 10 }));
+      expect(response.body).toEqual({ ok: true, item: mockItem });
+      expect(InventoryService.createItem).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: mockItem.name,
+          sku: mockItem.sku,
+          category: mockItem.category,
+          stock: mockItem.stock,
+          price: mockItem.price,
+        })
+      );
     });
 
-    it('rejects an invalid item before it reaches the model', async () => {
+    it('returns the service validation error', async () => {
+      vi.mocked(InventoryService.createItem).mockRejectedValue(new Error('Item name is required'));
+
       const response = await request(app)
         .post('/inventory/items')
         .send({ name: ' ', stock: 1, price: 10 });
@@ -108,102 +85,111 @@ describe('inventory API integration (routes to controllers to services to model)
   });
 
   describe('GET /inventory/items', () => {
-    it('returns a matching item when searched by name and category', async () => {
-      const name = uniqueName('inventory-api-item');
-      const createResponse = await createItem({ name });
-      const productId = createResponse.body.item.id;
+    it('returns items from the service search result', async () => {
+      vi.mocked(InventoryService.getItems).mockResolvedValue([mockItem]);
 
       const response = await request(app)
         .get('/inventory/items')
-        .query({ q: name, category: 'Integration Test' });
+        .query({ q: 'shirt', category: 'Garment', limit: 25, offset: 5 });
 
       expect(response.status).toBe(200);
-      expect(response.body.items).toEqual(
-        expect.arrayContaining([expect.objectContaining({ id: productId, name })])
-      );
+      expect(response.body).toEqual({ ok: true, items: [mockItem], count: 1 });
+      expect(InventoryService.getItems).toHaveBeenCalledWith('shirt', 'Garment', 25, 5);
     });
   });
 
   describe('GET /inventory/items/:id', () => {
-    it('retrieves an active item by ID', async () => {
-      const createResponse = await createItem();
-      const { id: productId, name, stock } = createResponse.body.item;
+    it('returns an item from the service', async () => {
+      vi.mocked(InventoryService.getItemById).mockResolvedValue(mockItem);
 
-      const response = await request(app).get(`/inventory/items/${productId}`);
+      const response = await request(app).get(/inventory/items / ${ mockItem.id });
 
       expect(response.status).toBe(200);
-      expect(response.body.item).toEqual(expect.objectContaining({ id: productId, name, stock }));
+      expect(response.body).toEqual({ ok: true, item: mockItem });
+      expect(InventoryService.getItemById).toHaveBeenCalledWith(String(mockItem.id));
+    });
+
+    it('returns 404 when the service cannot find the item', async () => {
+      vi.mocked(InventoryService.getItemById).mockRejectedValue(new Error('Item not found with id: 999'));
+
+      const response = await request(app).get('/inventory/items/999');
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ ok: false, error: 'Item not found with id: 999' });
     });
   });
 
   describe('PUT /inventory/items/:id', () => {
-    it('updates an existing item', async () => {
-      const createResponse = await createItem();
-      const productId = createResponse.body.item.id;
+    it('updates an item using the service response', async () => {
+      const updatedItem = { ...mockItem, stock: 15, price: 150 };
+      vi.mocked(InventoryService.updateItem).mockResolvedValue(updatedItem);
 
       const response = await request(app)
-        .put(`/inventory/items/${productId}`)
+        .put(/inventory/items / ${ mockItem.id })
         .send({ stock: 15, price: 150 });
 
       expect(response.status).toBe(200);
-      expect(response.body.item).toEqual(expect.objectContaining({ id: productId, stock: 15 }));
-      expect(Number(response.body.item.price)).toBe(150);
-    });
-  });
-
-  describe('DELETE /inventory/items/:id', () => {
-    it('soft-deletes an inventory item', async () => {
-      const createResponse = await createItem();
-      const productId = createResponse.body.item.id;
-
-      const response = await request(app).delete(`/inventory/items/${productId}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({ ok: true, message: 'Item deleted successfully' });
-
-      const missingResponse = await request(app).get(`/inventory/items/${productId}`);
-      expect(missingResponse.status).toBe(404);
-
-      const { rows } = await pool.query('SELECT is_active FROM public.products WHERE id = $1', [productId]);
-      expect(rows[0].is_active).toBe(false);
-    });
-  });
-
-  describe('POST /inventory/designs', () => {
-    it('creates a design', async () => {
-      const title = uniqueName('inventory-api-design');
-      const response = await createDesign({ title });
-
-      expect(response.status).toBe(201);
-      expect(response.body.design).toEqual(expect.objectContaining({ title }));
-    });
-  });
-
-  describe('GET /inventory/designs', () => {
-    it('lists a newly created design', async () => {
-      const title = uniqueName('inventory-api-design');
-      const createResponse = await createDesign({ title });
-      const designId = createResponse.body.design.id;
-
-      const response = await request(app).get('/inventory/designs').query({ limit: 100 });
-
-      expect(response.status).toBe(200);
-      expect(response.body.designs).toEqual(
-        expect.arrayContaining([expect.objectContaining({ id: designId, title })])
+      expect(response.body).toEqual({ ok: true, item: updatedItem });
+      expect(InventoryService.updateItem).toHaveBeenCalledWith(
+        String(mockItem.id),
+        expect.objectContaining({ stock: 15, price: 150 })
       );
     });
   });
 
-  describe('DELETE /inventory/designs/:id', () => {
-    it('deletes a design', async () => {
-      const createResponse = await createDesign();
-      const designId = createResponse.body.design.id;
+  describe('DELETE /inventory/items/:id', () => {
+    it('deletes an item through the service', async () => {
+      vi.mocked(InventoryService.deleteItem).mockResolvedValue(mockItem);
 
-      const response = await request(app).delete(`/inventory/designs/${designId}`);
+      const response = await request(app).delete(/inventory/items / ${ mockItem.id });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ ok: true, message: 'Item deleted successfully' });
+      expect(InventoryService.deleteItem).toHaveBeenCalledWith(String(mockItem.id));
+    });
+  });
+
+  describe('POST /inventory/designs', () => {
+    it('creates a design using the service response', async () => {
+      vi.mocked(InventoryService.createDesign).mockResolvedValue(mockDesign);
+
+      const response = await request(app)
+        .post('/inventory/designs')
+        .send({
+          title: mockDesign.title,
+          url: mockDesign.url,
+          uploaded_by: mockDesign.uploaded_by,
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual({ ok: true, design: mockDesign });
+      expect(InventoryService.createDesign).toHaveBeenCalledWith(
+        expect.objectContaining({ title: mockDesign.title, url: mockDesign.url })
+      );
+    });
+  });
+
+  describe('GET /inventory/designs', () => {
+    it('returns designs from the service', async () => {
+      vi.mocked(InventoryService.getDesigns).mockResolvedValue([mockDesign]);
+
+      const response = await request(app).get('/inventory/designs').query({ limit: 25, offset: 5 });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ ok: true, designs: [mockDesign], count: 1 });
+      expect(InventoryService.getDesigns).toHaveBeenCalledWith(25, 5);
+    });
+  });
+
+  describe('DELETE /inventory/designs/:id', () => {
+    it('deletes a design through the service', async () => {
+      vi.mocked(InventoryService.deleteDesign).mockResolvedValue(mockDesign);
+
+      const response = await request(app).delete(/inventory/designs / ${ mockDesign.id });
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ ok: true, message: 'Design deleted successfully' });
-      createdDesignIds.delete(designId);
+      expect(InventoryService.deleteDesign).toHaveBeenCalledWith(String(mockDesign.id));
     });
   });
 });

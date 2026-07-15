@@ -5,28 +5,27 @@ const ReceiptItem = ({ item }) => {
   if (!item) return null;
 
   const subtotal = item.price * item.quantity;
+  const formatMoney = (value) => value.toLocaleString();
 
   return (
-    <li>
+    <li aria-label={`receipt item ${item.productName}`}>
       {/* Requirement: aria-label="name of..." */}
-      <span aria-label={`name of ${item.productName}`}>
-        {item.productName}
-      </span>
+      <div>
+        <strong aria-label={`name of ${item.productName}`}>{item.productName}</strong>
+      </div>
 
       {/* Requirement: aria-label="quantity of..." content "x2" */}
-      <span aria-label={`quantity of ${item.productName}`}>
-        x{item.quantity}
-      </span>
+      <div aria-label={`quantity of ${item.productName}`}>x{item.quantity}</div>
 
       {/* Requirement: aria-label="unit price of..." content "₱350 each" */}
-      <span aria-label={`unit price of ${item.productName}`}>
-        ₱{item.price} each
-      </span>
+      <div aria-label={`unit price of ${item.productName}`}>
+        ₱{formatMoney(item.price)} each
+      </div>
 
       {/* Requirement: aria-label="subtotal for..." content "₱700" */}
-      <span aria-label={`subtotal for ${item.productName}`}>
-        ₱{subtotal}
-      </span>
+      <div aria-label={`subtotal for ${item.productName}`}>
+        ₱{formatMoney(subtotal)}
+      </div>
     </li>
   );
 };

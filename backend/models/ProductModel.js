@@ -4,6 +4,8 @@
  * Does not implement actual database connectivity (Supabase, MySQL, etc.).
  */
 
+import { pool } from '../db/pool.js';
+
 export const ProductModel = {
   // Client-side/Model validation helpers
   validateItemStructure(item) {
@@ -19,24 +21,61 @@ export const ProductModel = {
     return true;
   },
 
-  // DB placeholders - To be fully implemented in later database integration tasks
+  // DB methods
   async getAllItems() {
-    throw new Error('Database method not implemented');
+    const { rows } = await pool.query(
+      `SELECT id, name, stock, updated_at
+       FROM products
+       ORDER BY id ASC`
+    );
+    return rows;
   },
 
   async getItemById(id) {
     if (id === undefined || id === null) throw new Error('ID cannot be null');
-    throw new Error('Database method not implemented');
+
+    const { rows } = await pool.query(
+      `SELECT id, name, stock, updated_at
+       FROM products
+       WHERE id = $1
+       LIMIT 1`,
+      [id]
+    );
+
+    return rows[0] || null;
   },
+
 
   async createItem(item) {
     this.validateItemStructure(item);
-    throw new Error('Database method not implemented');
+
+    const { id, name, stock } = item;
+
+    const { rows } = await pool.query(
+      `INSERT INTO products (id, name, stock)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, stock, updated_at`,
+      [id, name, stock]
+    );
+
+    return rows[0];
   },
 
+  // updateStock(id, quantity) semantics: set stock to the provided quantity
   async updateStock(id, quantity) {
     if (id === undefined || id === null) throw new Error('ID cannot be null');
     if (!Number.isInteger(quantity)) throw new Error('Stock must be an integer');
-    throw new Error('Database method not implemented');
+
+    const { rows } = await pool.query(
+      `UPDATE products
+       SET stock = $2,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, name, stock, updated_at`,
+      [id, quantity]
+    );
+
+    if (rows.length === 0) return null;
+    return rows[0];
   }
 };

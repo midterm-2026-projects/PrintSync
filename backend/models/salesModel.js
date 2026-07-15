@@ -33,28 +33,79 @@ export const OrderItemSchema = {
 
 // --- POS MODEL LOGIC ---
 
+import { pool } from '../db/pool.js';
+
 export const salesPOSModel = {
-  /**
-   * Saves a new order record.
-   */
-  createOrder: async (orderId, totalAmount) => {
-    throw new Error('salesPOSModel.createOrder: not connected to a live database.');
+  // Saves a new order record.
+  async createOrder(orderId, totalAmount) {
+    const { rows } = await pool.query(
+      `INSERT INTO orders (order_id, total_amount, created_at)
+       VALUES ($1, $2, NOW())
+       RETURNING order_id, total_amount, created_at`,
+      [orderId, totalAmount]
+    );
+    return rows[0];
   },
 
-  /**
-   * Saves all line items for an order.
-   */
-  createOrderItems: async (orderId, items) => {
-    throw new Error('salesPOSModel.createOrderItems: not connected to a live database.');
+  // Saves all line items for an order.
+  async createOrderItems(orderId, items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+
+    // Insert with one VALUES list to reduce roundtrips.
+    const values = [];
+    const placeholders = items.map((item, idx) => {
+      const base = idx * 6;
+      values.push(
+        item.order_id,
+        item.product_id,
+        item.product_name,
+        item.quantity,
+        item.unit_price,
+        item.subtotal
+      );
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`;
+    });
+
+    const { rowCount } = await pool.query(
+      `INSERT INTO order_items (
+         order_id,
+         product_id,
+         product_name,
+         quantity,
+         unit_price,
+         subtotal
+       )
+       VALUES ${placeholders.join(',')}`,
+      values
+    );
+
+    return rowCount;
   },
 
-  /**
-   * Fetches an order and its items by order_id.
-   */
-  getOrderById: async (orderId) => {
-    throw new Error('salesPOSModel.getOrderById: not connected to a live database.');
+  // Fetch order by id (optional for now)
+  async getOrderById(orderId) {
+    const { rows } = await pool.query(
+      `SELECT order_id, total_amount, created_at
+       FROM orders
+       WHERE order_id = $1
+       LIMIT 1`,
+      [orderId]
+    );
+
+    return rows[0] || null;
+  },
+
+  // Week 4 Day 1: Transaction history (most recent first)
+  async queryOrdersSortedByCreatedAtDesc() {
+    const { rows } = await pool.query(
+      `SELECT order_id, total_amount, created_at
+       FROM orders
+       ORDER BY created_at DESC`
+    );
+    return rows;
   },
 };
+
 
 // --- ANALYTICS MODEL LOGIC ---
 

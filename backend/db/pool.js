@@ -123,6 +123,9 @@ const pool = {
   query: async (...args) => {
     return getRealPool().query(...args);
   },
+  connect: async () => {
+    return getRealPool().connect();
+  },
   end: async (...args) => {
     if (process.env.POOL_FORCE_END !== 'true') return;
 

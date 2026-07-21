@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
-import { analyticsModel } from '../../models/analyticsModel.js';
+import { posModel } from '../../models/posModel.js';
 
 vi.stubEnv('GEMINI_API_KEY', 'AQ.fake');
 
@@ -38,7 +38,7 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
-  vi.spyOn(analyticsModel, 'queryRecentOrdersForAi').mockResolvedValue(fakeOrders);
+  vi.spyOn(posModel, 'queryRecentOrdersForAi').mockResolvedValue(fakeOrders);
   fetchMock.mockClear();
 });
 
@@ -55,7 +55,7 @@ describe('LLM client integration via /analytics/ai-insights', () => {
     expect(res.body.insights).toBe('AI-generated insight: demand is rising for bestselling products.');
     expect(res.body.orderCount).toBe(fakeOrders.length);
 
-    expect(analyticsModel.queryRecentOrdersForAi).toHaveBeenCalledWith(15);
+    expect(posModel.queryRecentOrdersForAi).toHaveBeenCalledWith(15);
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const fetchCall = fetchMock.mock.calls[0];
@@ -70,6 +70,6 @@ describe('LLM client integration via /analytics/ai-insights', () => {
     const res = await request(app).get('/analytics/ai-insights').query({ limit: '10' });
 
     expect(res.status).toBe(200);
-    expect(analyticsModel.queryRecentOrdersForAi).toHaveBeenCalledWith(10);
+    expect(posModel.queryRecentOrdersForAi).toHaveBeenCalledWith(10);
   });
 });

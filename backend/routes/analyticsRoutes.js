@@ -4,6 +4,7 @@ import {
   getKpi,
   getSalesTrend,
   getTransactionHistory,
+  getAiInsights,
 } from '../controllers/analyticsController.js';
 
 export const analyticsRouter = Router();
@@ -16,4 +17,7 @@ analyticsRouter.get('/sales-trend', getSalesTrend);
 
 // Raw transaction history for display
 analyticsRouter.get('/transaction-history', getTransactionHistory);
+
+// AI-generated business insights (server-side LLM)
+analyticsRouter.get('/ai-insights', getAiInsights);
 

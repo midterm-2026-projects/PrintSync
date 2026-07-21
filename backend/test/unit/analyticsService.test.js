@@ -34,12 +34,12 @@ describe('analyticsService', () => {
   describe('getAiBusinessInsights', () => {
     it('should query recent orders and return insights with orderCount', async () => {
       const orders = [{ orderId: 'TXN-1', totalAmount: 100, createdAt: '2024-01-01', items: [] }];
-      vi.mocked(analyticsModel.queryRecentOrdersForAi).mockResolvedValue(orders);
+      vi.mocked(posModel.queryRecentOrdersForAi).mockResolvedValue(orders);
       vi.mocked(generateAIBusinessInsights).mockResolvedValue('Insight text');
 
       const out = await getAiBusinessInsights(1);
 
-      expect(analyticsModel.queryRecentOrdersForAi).toHaveBeenCalledWith(1);
+      expect(posModel.queryRecentOrdersForAi).toHaveBeenCalledWith(1);
       expect(generateAIBusinessInsights).toHaveBeenCalledWith(orders, { limit: 1 });
       expect(out).toEqual({ insights: 'Insight text', orderCount: 1 });
     });

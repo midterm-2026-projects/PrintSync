@@ -6,6 +6,7 @@
  * Unit tests can mock posModel to validate service behavior/validation.
  */
 import { posModel } from '../models/posModel.js';
+import { generateAIBusinessInsights } from './llmClient.js';
 
 export const VALID_PERIODS = new Set(['7d', '30d', '90d']);
 
@@ -66,4 +67,25 @@ export async function getTransactionHistory(period = '30d') {
     return { transactions };
   }
   return { transactions: [] };
+}
+
+/**
+ * Get AI-generated business insights from recent orders.
+ * @param {number|string} limit - number of recent orders to include
+ */
+export async function getAiBusinessInsights(limit = 15) {
+  if (limit === undefined || limit === null) {
+    limit = 15;
+  }
+
+  const n = Number(limit);
+  if (!Number.isInteger(n) || n < 1) {
+    throw new TypeError('limit must be a positive integer');
+  }
+
+  const orders = await posModel.queryRecentOrdersForAi(n);
+
+  const insightsText = await generateAIBusinessInsights(orders, { limit: n });
+
+  return { insights: insightsText, orderCount: Array.isArray(orders) ? orders.length : 0 };
 }

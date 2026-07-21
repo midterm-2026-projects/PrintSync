@@ -674,7 +674,7 @@ describe('posModel - queryKpiByPeriod (moved from analyticsModel)', () => {
   });
 
   it('queryRecentOrdersForAi should return recent orders with nested items', async () => {
-    const recentOrders = await analyticsModel.queryRecentOrdersForAi(10);
+    const recentOrders = await posModel.queryRecentOrdersForAi(10);
 
     expect(Array.isArray(recentOrders)).toBe(true);
     expect(recentOrders.length).toBeGreaterThanOrEqual(2);

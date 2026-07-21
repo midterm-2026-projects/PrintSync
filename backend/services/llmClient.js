@@ -15,7 +15,7 @@ async function _ensureFetch() {
     // eslint-disable-next-line node/no-unsupported-features/es-syntax
     const mod = await import('node-fetch');
     // node-fetch v3 default export is the fetch function
-    return mod.default || mod;
+    return mod.default || mod;  
   } catch (err) {
     throw new Error('Global `fetch` is not available. Use Node 18+ or install `node-fetch`.');
   }

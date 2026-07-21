@@ -1,23 +1,31 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router';
 
 const navItems = ['Inventory', 'POS', 'Analytics'];
 
-const AppHeader = ({ activeTab }) => {
+const AppHeader = () => {
+    const location = useLocation();
+    const activeTab = navItems.find(
+        (item) => location.pathname === `/${item.toLowerCase()}`
+    );
+
     return (
         <header data-testid="app-header" style={styles.header}>
             <h1 data-testid="system-name" style={styles.title}>PrintSync</h1>
             <nav style={styles.nav}>
                 {navItems.map((item) => (
-                    <span
+                    <Link
                         key={item}
+                        to={`/${item.toLowerCase()}`}
                         data-testid={`nav-label-${item.toLowerCase()}`}
                         style={{
                             ...styles.navItem,
                             ...(activeTab === item ? styles.activeNavItem : {}),
+                            textDecoration: 'none',
                         }}
                     >
                         {item}
-                    </span>
+                    </Link>
                 ))}
             </nav>
         </header>

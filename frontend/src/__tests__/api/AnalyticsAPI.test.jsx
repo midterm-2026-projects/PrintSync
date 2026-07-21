@@ -24,7 +24,7 @@ describe('Analytics API integration (MSW)', () => {
     // The page uses static data, so revenue remains ₱5,700.00.
     // The period change affects the PredictedDemandTable confidence level.
     expect(screen.getByTestId('revenue-total')).toHaveTextContent('₱5,700.00');
-    expect(screen.getByText('High')).toBeInTheDocument();
+    expect(screen.getAllByText('High')).toHaveLength(3);
   });
 
   it('shows a user-facing dashboard error when an analytics request fails', async () => {
@@ -49,8 +49,9 @@ describe('Analytics API integration (MSW)', () => {
 
     await user.click(screen.getByRole('button', { name: /analyze business trends/i }));
 
-    // The AIInsightArea component has a hardcoded insight string (not API-driven).
-    expect(await screen.findByText(/high demand for custom prints/i)).toBeInTheDocument();
+    // The AIInsightArea uses setTimeout(1000) then shows hardcoded text.
+    // Use a longer timeout to wait for the async state update.
+    expect(await screen.findByText(/high demand for custom prints/i, {}, { timeout: 3000 })).toBeInTheDocument();
   });
 });
 

@@ -1,6 +1,8 @@
 import express from 'express';
 
 import { salesRouter } from './routes/salesRoutes.js';
+import { inventoryRouter } from './routes/inventoryRoutes.js';
+import { analyticsRouter } from './routes/analyticsRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -12,6 +14,8 @@ export function createApp() {
   });
 
   app.use('/sales', salesRouter);
+  app.use('/inventory', inventoryRouter);
+  app.use('/analytics', analyticsRouter);
 
   return app;
 }

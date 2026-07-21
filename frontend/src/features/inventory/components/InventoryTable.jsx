@@ -1,4 +1,3 @@
-import React from 'react';
 
 const InventoryTable = ({ items }) => {
   // Initialization Logic: Handle null or empty array
@@ -13,6 +12,7 @@ const InventoryTable = ({ items }) => {
       <thead>
         <tr>
           <th>Product Name</th>
+          <th>Category</th>
           <th>Stock</th>
           <th>Price</th>
         </tr>
@@ -21,6 +21,7 @@ const InventoryTable = ({ items }) => {
         {safeItems.map((item) => (
           <tr key={item.id}>
             <td>{item.productName}</td>
+            <td>{item.category}</td>
             <td>{item.stock} units</td>
             <td>₱{Number(item.price || 0).toFixed(2)}</td>
           </tr>

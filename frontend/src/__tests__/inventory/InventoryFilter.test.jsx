@@ -1,45 +1,51 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import InventoryFilter from '../../features/inventory/components/InventoryFilter';
 
 describe('Objective 1 - Day 1: Data Filtering System', () => {
+  const mockInventory = [
+    { id: '1', productName: 'Premium Cotton T-Shirt', category: 'Garment', stock: 45, price: 12.99 },
+    { id: '2', productName: 'Polyester Sports Jersey', category: 'Garment', stock: 8, price: 15.5 },
+    { id: '3', productName: 'Sublimation Ink Set (CMYK)', category: 'Material', stock: 12, price: 45.0 },
+    { id: '4', productName: 'Heavy Cotton Hoodie', category: 'Garment', stock: 20, price: 28.0 },
+    { id: '5', productName: 'A4 Transfer Paper (100pcs)', category: 'Material', stock: 0, price: 18.75 },
+  ];
 
-    // Test Case 1: Verifies the case-insensitive real-time text search
-    it('should filter the item list in real-time, showing only items that contain the search string "Cotton" regardless of letter case', async () => {
-        const user = userEvent.setup();
-        render(<InventoryFilter />);
+  it('should filter items in real-time (case-insensitive search)', async () => {
+    const user = userEvent.setup();
+    const onFilteredItems = vi.fn();
 
-        const searchInput = screen.getByPlaceholderText(/Search items by name/i);
+    render(<InventoryFilter items={mockInventory} onFilteredItems={onFilteredItems} />);
 
-        // Act: Type "cotton"
-        await user.type(searchInput, 'cotton');
+    const searchInput = screen.getByPlaceholderText(/Search items by name/i);
 
-        // Assert: Cotton items should be visible
-        expect(screen.getByText('Premium Cotton T-Shirt')).toBeInTheDocument();
-        expect(screen.getByText('Heavy Cotton Hoodie')).toBeInTheDocument();
+    await user.type(searchInput, 'cotton');
 
-        // Assert: Non-matching items should be removed
-        expect(screen.queryByText('Polyester Sports Jersey')).not.toBeInTheDocument();
-    });
+    const lastCall = onFilteredItems.mock.calls[onFilteredItems.mock.calls.length - 1]?.[0] || [];
+    const names = lastCall.map((i) => i.productName);
 
-    // Test Case 2: Verifies the category filtering functionality
-    it('should hide all items except those matching the "Garment" category when the corresponding filter is selected', async () => {
-        const user = userEvent.setup();
-        render(<InventoryFilter />);
+    expect(names).toContain('Premium Cotton T-Shirt');
+    expect(names).toContain('Heavy Cotton Hoodie');
+    expect(names).not.toContain('Polyester Sports Jersey');
+  });
 
-        const garmentFilterButton = screen.getByRole('button', { name: /^Garment$/i });
+  it('should filter by category when the category button is selected', async () => {
+    const user = userEvent.setup();
+    const onFilteredItems = vi.fn();
 
-        // Act: Click "Garment"
-        await user.click(garmentFilterButton);
+    render(<InventoryFilter items={mockInventory} onFilteredItems={onFilteredItems} />);
 
-        // Assert: Garments are present
-        expect(screen.getByText('Premium Cotton T-Shirt')).toBeInTheDocument();
-        expect(screen.getByText('Polyester Sports Jersey')).toBeInTheDocument();
+    const garmentFilterButton = screen.getByRole('button', { name: /^Garment$/i });
+    await user.click(garmentFilterButton);
 
-        // Assert: Materials are hidden
-        expect(screen.queryByText('Sublimation Ink Set (CMYK)')).not.toBeInTheDocument();
-        expect(screen.queryByText('A4 Transfer Paper (100pcs)')).not.toBeInTheDocument();
-    });
+    const lastCall = onFilteredItems.mock.calls[onFilteredItems.mock.calls.length - 1]?.[0] || [];
+    const names = lastCall.map((i) => i.productName);
+
+    expect(names).toContain('Premium Cotton T-Shirt');
+    expect(names).toContain('Polyester Sports Jersey');
+    expect(names).not.toContain('Sublimation Ink Set (CMYK)');
+    expect(names).not.toContain('A4 Transfer Paper (100pcs)');
+  });
 });

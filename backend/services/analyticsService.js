@@ -2,10 +2,10 @@
  * analyticsService.js
  * Service-layer for analytics endpoints.
  *
- * For now, this service delegates to analyticsModel query methods.
- * Unit tests can mock analyticsModel to validate service behavior/validation.
+ * This service delegates to posModel query methods (moved from analyticsModel).
+ * Unit tests can mock posModel to validate service behavior/validation.
  */
-import { analyticsModel } from '../models/analyticsModel.js';
+import { posModel } from '../models/posModel.js';
 
 export const VALID_PERIODS = new Set(['7d', '30d', '90d']);
 
@@ -41,7 +41,7 @@ export function invalidPeriodResponse(res) {
 export async function getKpi(period = '30d') {
   const normalized = normalizePeriod(period);
   const interval = toInterval(normalized);
-  const out = await analyticsModel.queryKpiByPeriod(normalized, interval);
+  const out = await posModel.queryKpiByPeriod(normalized, interval);
   // Expect model to return { totalRevenue, totalOrders }
   return out ?? { totalRevenue: 0, totalOrders: 0 };
 }
@@ -50,7 +50,7 @@ export async function getKpi(period = '30d') {
 export async function getSalesTrend(period = '30d') {
   const normalized = normalizePeriod(period);
   const interval = toInterval(normalized);
-  const out = await analyticsModel.querySalesTrendByPeriod(normalized, interval);
+  const out = await posModel.querySalesTrendByPeriod(normalized, interval);
   return out ?? { data: [] };
 }
 
@@ -58,7 +58,7 @@ export async function getSalesTrend(period = '30d') {
 export async function getTransactionHistory(period = '30d') {
   const normalized = normalizePeriod(period);
   const interval = toInterval(normalized);
-  const out = await analyticsModel.queryTransactionsByPeriod(normalized, interval);
+  const out = await posModel.queryTransactionsByPeriod(normalized, interval);
 
   const transactions = out?.transactions ?? out ?? [];
   // Be permissive: allow either {transactions:[...]} or [...] from mocked model.

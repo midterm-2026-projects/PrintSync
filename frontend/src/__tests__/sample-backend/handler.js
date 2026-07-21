@@ -44,6 +44,24 @@ export const inventoryFixtures = {
   ],
 };
 
+export const posFixtures = {
+  products: [
+    { id: 1, productName: 'Cotton T-Shirt', price: 350, stock: 50, category: 'Garment', image_url: null },
+    { id: 2, productName: 'Polo Shirt', price: 450, stock: 30, category: 'Garment', image_url: null },
+    { id: 3, productName: 'Hoodie', price: 750, stock: 20, category: 'Garment', image_url: null },
+    { id: 4, productName: 'Mug', price: 150, stock: 100, category: 'Material', image_url: null },
+    { id: 5, productName: 'Cap', price: 250, stock: 40, category: 'Garment', image_url: null },
+  ],
+  orders: [
+    {
+      orderId: 'TXN-20250127-A3F9K2',
+      totalAmount: 700,
+      createdAt: '2025-01-27T12:00:00.000Z',
+      itemsCount: 2,
+    },
+  ],
+};
+
 export const handlers = [
   http.get('/analytics/kpi', ({ request }) => {
     const fixture = fixtureFor(request);
@@ -153,5 +171,64 @@ export const handlers = [
     inventoryFixtures.designs.splice(index, 1);
     return HttpResponse.json({ ok: true, message: 'Design deleted successfully' });
   }),
-];
 
+  // POS endpoints
+  http.get('/pos/products', ({ request }) => {
+    const url = new URL(request.url);
+    const q = url.searchParams.get('q') || '';
+    let items = posFixtures.products;
+    if (q) {
+      items = items.filter((item) => item.productName.toLowerCase().includes(q.toLowerCase()));
+    }
+    return HttpResponse.json({ ok: true, items, count: items.length });
+  }),
+
+  http.get('/pos/products/:id', ({ params }) => {
+    const { id } = params;
+    const item = posFixtures.products.find((p) => String(p.id) === id);
+    if (!item) {
+      return HttpResponse.json({ ok: false, error: `Product not found with id: ${id}` }, { status: 404 });
+    }
+    return HttpResponse.json({ ok: true, item });
+  }),
+
+  http.post('/pos/orders', async ({ request }) => {
+    const body = await request.json();
+    const orderId = `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const newOrder = {
+      orderId,
+      totalAmount: body.items?.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 0), 0) || 0,
+      createdAt: new Date().toISOString(),
+      itemsCount: body.items?.length || 0,
+    };
+    posFixtures.orders.push(newOrder);
+    return HttpResponse.json({ ok: true, order: newOrder }, { status: 201 });
+  }),
+
+  http.get('/pos/orders', () => {
+    return HttpResponse.json({ ok: true, orders: posFixtures.orders, count: posFixtures.orders.length });
+  }),
+
+  http.get('/pos/orders/:orderId', ({ params }) => {
+    const { orderId } = params;
+    const order = posFixtures.orders.find((o) => o.orderId === orderId);
+    if (!order) {
+      return HttpResponse.json({ ok: false, error: `Order not found: ${orderId}` }, { status: 404 });
+    }
+    return HttpResponse.json({
+      ok: true,
+      order: {
+        orderId: order.orderId,
+        totalAmount: order.totalAmount,
+        createdAt: order.createdAt,
+        items: [
+          { id: 1, productId: 1, productName: 'Cotton T-Shirt', quantity: 2, unitPrice: 350, subtotal: 700 },
+        ],
+      },
+    });
+  }),
+
+  http.get('/pos/transactions', () => {
+    return HttpResponse.json({ ok: true, orders: posFixtures.orders, count: posFixtures.orders.length });
+  }),
+];

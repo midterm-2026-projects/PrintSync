@@ -6,20 +6,48 @@ vi.mock('../../models/posModel.js', () => {
       queryKpiByPeriod: vi.fn(),
       querySalesTrendByPeriod: vi.fn(),
       queryTransactionsByPeriod: vi.fn(),
+      queryRecentOrdersForAi: vi.fn(),
     },
   };
 });
 
+vi.mock('../../services/llmClient.js', () => {
+  return {
+    generateAIBusinessInsights: vi.fn(),
+  };
+});
+
 import { posModel } from '../../models/posModel.js';
+import { generateAIBusinessInsights } from '../../services/llmClient.js';
 import {
   getKpi,
   getSalesTrend,
   getTransactionHistory,
+  getAiBusinessInsights,
 } from '../../services/analyticsService.js';
 
 describe('analyticsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('getAiBusinessInsights', () => {
+    it('should query recent orders and return insights with orderCount', async () => {
+      const orders = [{ orderId: 'TXN-1', totalAmount: 100, createdAt: '2024-01-01', items: [] }];
+      vi.mocked(analyticsModel.queryRecentOrdersForAi).mockResolvedValue(orders);
+      vi.mocked(generateAIBusinessInsights).mockResolvedValue('Insight text');
+
+      const out = await getAiBusinessInsights(1);
+
+      expect(analyticsModel.queryRecentOrdersForAi).toHaveBeenCalledWith(1);
+      expect(generateAIBusinessInsights).toHaveBeenCalledWith(orders, { limit: 1 });
+      expect(out).toEqual({ insights: 'Insight text', orderCount: 1 });
+    });
+
+    it('should throw when limit is not a positive integer', async () => {
+      await expect(getAiBusinessInsights(0)).rejects.toThrow('limit must be a positive integer');
+      await expect(getAiBusinessInsights(-5)).rejects.toThrow('limit must be a positive integer');
+    });
   });
 
   describe('getKpi', () => {

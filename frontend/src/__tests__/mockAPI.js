@@ -1,5 +1,5 @@
 import { beforeAll, afterEach, afterAll } from "vitest";
-import server from "./sample-backend/server";
+import { server } from "./sample-backend/server";
 
 beforeAll(() =>{
   server.listen();

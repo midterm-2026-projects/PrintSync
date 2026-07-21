@@ -76,4 +76,40 @@ describe('Application Navigation from AppHeader', () => {
         const analyticsText = screen.getByText(/last updated/i);
         expect(analyticsText).toBeInTheDocument();
     });
+
+    it('should navigate from Inventory page to POS page when POS label is clicked', async () => {
+        const user = userEvent.setup();
+
+        render(
+            <MemoryRouter initialEntries={["/inventory"]}>
+                <AppRoutes />
+            </MemoryRouter>
+        );
+
+        expect(screen.getByRole('heading', { name: /Inventory Management/i })).toBeInTheDocument();
+
+        const posLink = screen.getByTestId('nav-label-pos');
+        await user.click(posLink);
+
+        const posHeader = screen.getByRole('heading', { name: /Point of Sale/i });
+        expect(posHeader).toBeInTheDocument();
+    });
+
+    it('should navigate from Analytics page to POS page when POS label is clicked', async () => {
+        const user = userEvent.setup();
+
+        render(
+            <MemoryRouter initialEntries={["/analytics"]}>
+                <AppRoutes />
+            </MemoryRouter>
+        );
+
+        expect(screen.getByText(/last updated/i)).toBeInTheDocument();
+
+        const posLink = screen.getByTestId('nav-label-pos');
+        await user.click(posLink);
+
+        const posHeader = screen.getByRole('heading', { name: /Point of Sale/i });
+        expect(posHeader).toBeInTheDocument();
+    });
 });

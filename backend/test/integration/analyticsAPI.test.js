@@ -15,6 +15,7 @@ vi.mock('../../services/analyticsService.js', () => ({
   getKpi: vi.fn(),
   getSalesTrend: vi.fn(),
   getTransactionHistory: vi.fn(),
+  getAiBusinessInsights: vi.fn(),
 
   // Used by controllers via destructuring
   getErrorMessage: vi.fn((err) => (err instanceof Error ? err.message : 'Unknown error')),
@@ -96,6 +97,31 @@ describe('analytics API (routes → controllers → mocked service layer)', () =
 
       expect(analyticsService.parsePeriod).toHaveBeenCalledWith('30d');
       expect(analyticsService.getTransactionHistory).toHaveBeenCalledWith('30d');
+    });
+  });
+
+  describe('GET /analytics/ai-insights', () => {
+    it('returns ok=true with generated insights for valid limit', async () => {
+      vi.mocked(analyticsService.getAiBusinessInsights).mockResolvedValue({
+        insights: 'Sales are trending upward.',
+        orderCount: 15,
+      });
+
+      const res = await request(app).get('/analytics/ai-insights').query({ limit: '15' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.insights).toBe('Sales are trending upward.');
+      expect(res.body.orderCount).toBe(15);
+      expect(analyticsService.getAiBusinessInsights).toHaveBeenCalledWith(15);
+    });
+
+    it('returns 400 for invalid limit', async () => {
+      const res = await request(app).get('/analytics/ai-insights').query({ limit: 'bad' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.error).toContain('Invalid limit');
     });
   });
 });

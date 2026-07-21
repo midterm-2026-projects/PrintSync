@@ -10,6 +10,41 @@ export const posModel = {
   /**
    * Get all active products with optional category filter and pagination.
    */
+  async queryRecentOrdersForAi(limit = 15) {
+    const { rows } = await pool.query(
+      `
+      SELECT
+        o.order_id AS "orderId",
+        o.created_at AS "createdAt",
+        o.total_amount::numeric AS "totalAmount",
+        COALESCE(json_agg(json_build_object(
+          'productName', oi.product_name,
+          'quantity', oi.quantity,
+          'unitPrice', oi.unit_price::numeric,
+          'subtotal', oi.subtotal::numeric
+        ) ORDER BY oi.id) FILTER (WHERE oi.id IS NOT NULL), '[]') AS items
+      FROM public.orders o
+      LEFT JOIN public.order_items oi ON o.order_id = oi.order_id
+      GROUP BY o.order_id, o.created_at, o.total_amount
+      ORDER BY o.created_at DESC
+      LIMIT $1
+    `,
+      [limit]
+    );
+
+    return (rows ?? []).map((r) => ({
+      orderId: r.orderId,
+      createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+      totalAmount: Number(r.totalAmount),
+      items: Array.isArray(r.items) ? r.items.map((it) => ({
+        productName: it.productName,
+        quantity: it.quantity,
+        unitPrice: Number(it.unitPrice),
+        subtotal: Number(it.subtotal),
+      })) : [],
+    }));
+  },
+
   async getAllProducts(filters = {}) {
     const { category, limit = 100, offset = 0 } = filters;
 

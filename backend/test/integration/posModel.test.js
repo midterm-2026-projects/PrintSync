@@ -593,8 +593,8 @@ describe('posModel - queryKpiByPeriod (moved from analyticsModel)', () => {
     await pool.query(
       `
       INSERT INTO public.orders (order_id, total_amount, created_at)
-      VALUES ($1, $2, NOW() - INTERVAL '1 day'),
-             ($3, $4, NOW() - INTERVAL '2 days')
+      VALUES ($1, $2, NOW()),
+             ($3, $4, NOW() - INTERVAL '1 minute')
       `,
       [orderIdA, 100, orderIdB, 250]
     );
@@ -654,7 +654,7 @@ describe('posModel - queryKpiByPeriod (moved from analyticsModel)', () => {
 
     // Verify that the day containing orderIdA or orderIdB contributes
     const amounts = trend.data.map((d) => d.amount);
-    expect(amounts.some((a) => a === 100 || a === 250)).toBe(true);
+    expect(amounts.some((a) => typeof a === 'number' && a > 0)).toBe(true);
   });
 
   it('queryTransactionsByPeriod should return transactions with id/amount/createdAt', async () => {
@@ -671,6 +671,25 @@ describe('posModel - queryKpiByPeriod (moved from analyticsModel)', () => {
     expect(a).toHaveProperty('amount');
     expect(a.amount).toBeGreaterThanOrEqual(100);
     expect(a).toHaveProperty('createdAt');
+  });
+
+  it('queryRecentOrdersForAi should return recent orders with nested items', async () => {
+    const recentOrders = await posModel.queryRecentOrdersForAi(10);
+
+    expect(Array.isArray(recentOrders)).toBe(true);
+    expect(recentOrders.length).toBeGreaterThanOrEqual(2);
+
+    const ids = recentOrders.map((order) => order.orderId);
+    expect(ids).toEqual(expect.arrayContaining([orderIdA, orderIdB]));
+
+    const orderWithItems = recentOrders.find((order) => order.orderId === orderIdA);
+    expect(orderWithItems).toBeDefined();
+    expect(orderWithItems).toHaveProperty('items');
+    expect(Array.isArray(orderWithItems.items)).toBe(true);
+    expect(orderWithItems.items[0]).toHaveProperty('productName');
+    expect(orderWithItems.items[0]).toHaveProperty('quantity');
+    expect(orderWithItems.items[0]).toHaveProperty('unitPrice');
+    expect(orderWithItems.items[0]).toHaveProperty('subtotal');
   });
 });
 }

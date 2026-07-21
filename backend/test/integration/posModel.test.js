@@ -567,8 +567,10 @@ describe('posModel - single item order', () => {
 });
 
 // ============================================================
-// POS Model — Analytics: queryKpiByPeriod
+// POS Model — Analytics: queryKpiByPeriod (moved from analyticsModel)
 // ============================================================
+// Guard: only run when DB credentials are available (CI may lack them)
+if (hasDb()) {
 describe('posModel - queryKpiByPeriod (moved from analyticsModel)', () => {
   let productId;
   let orderIdA;
@@ -671,4 +673,5 @@ describe('posModel - queryKpiByPeriod (moved from analyticsModel)', () => {
     expect(a).toHaveProperty('createdAt');
   });
 });
+}
 

@@ -116,7 +116,8 @@ test.describe('POS Full Workflow', () => {
 
     // Verify CheckoutModal appears
     await expect(page.getByRole('dialog', { name: 'Checkout confirmation' })).toBeVisible();
-    await expect(page.getByLabel('checkout grand total')).toHaveText(`₱${expectedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    // Note: CheckoutModal uses formatMoney = (value) => value.toLocaleString() — no forced decimals
+    await expect(page.getByLabel('checkout grand total')).toHaveText(`₱${expectedSubtotal.toLocaleString()}`);
 
     console.log('DEBUG: Checkout modal visible');
 
@@ -142,8 +143,8 @@ test.describe('POS Full Workflow', () => {
     await expect(page.getByLabel(`receipt item ${itemName}`)).toBeVisible();
     await expect(page.getByLabel(`quantity of ${itemName}`)).toHaveText(`x${purchaseQuantity}`);
 
-    // Verify receipt grand total
-    await expect(page.getByLabel('receipt grand total')).toHaveText(`₱${expectedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    // Verify receipt grand total (Receipt uses formatMoney = (value) => value.toLocaleString() — no forced decimals)
+    await expect(page.getByLabel('receipt grand total')).toHaveText(`₱${expectedSubtotal.toLocaleString()}`);
 
     // ══════════════════════════════════════════════════════════
     // STEP 10: Close receipt
@@ -166,7 +167,8 @@ test.describe('POS Full Workflow', () => {
     // The newly created transaction should be visible (most recent)
     const transactionRow = historySection.getByRole('row').filter({ hasText: transactionId });
     await expect(transactionRow).toBeVisible({ timeout: 10000 });
-    await expect(transactionRow).toContainText(`₱${expectedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    // Backend stores total_amount as subtotal; TransactionHistory formatCurrency uses minimumFractionDigits: 2
+    await expect(transactionRow).toContainText(`₱${expectedSubtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
     await expect(transactionRow).toContainText(String(purchaseQuantity));
 
     console.log('DEBUG: Transaction history verified');

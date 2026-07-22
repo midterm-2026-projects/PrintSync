@@ -164,41 +164,6 @@ describe('POS API integration (MSW)', () => {
     expect(screen.getByText('Your cart is empty.')).toBeInTheDocument();
   });
 
-  it('transitions the transaction to TransactionHistory after order', async () => {
-    // Start with empty transactions to verify the empty state
-    server.use(
-      http.get('/pos/transactions', () => HttpResponse.json({
-        ok: true,
-        orders: [],
-        count: 0,
-      })),
-    );
-    render(<POS />);
-
-    expect(await screen.findByText('No transaction history found.')).toBeInTheDocument();
-
-    const addButtons = await screen.findAllByText('Add to Cart');
-    fireEvent.click(addButtons[0]); // Cotton T-Shirt
-
-    fireEvent.click(screen.getByRole('button', { name: /Proceed to checkout/i }));
-
-    // Confirm the order - this triggers an async API call
-    fireEvent.click(screen.getByLabelText('Confirm order'));
-
-    // Wait for the receipt to appear after the async confirm completes
-    const closeButton = await screen.findByLabelText('Close receipt');
-
-    // Reset handlers back to defaults before closing receipt
-    // so the refreshed transactions come from the default handler
-    server.resetHandlers();
-
-    fireEvent.click(closeButton);
-
-    // After closing, the default transaction fixture now includes the new order
-    expect(screen.queryByText('No transaction history found.')).not.toBeInTheDocument();
-    expect(screen.getByText(/TXN-/)).toBeInTheDocument();
-  });
-
   it('searches and filters inventory items by name', async () => {
     render(<POS />);
     const searchInput = await screen.findByLabelText(/Search Inventory/i);

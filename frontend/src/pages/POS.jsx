@@ -115,11 +115,18 @@ export default function POS() {
     setShowCheckout(false);
   };
 
-  const handleCloseReceipt = () => {
+  const handleCloseReceipt = async () => {
     setShowReceipt(false);
     setCartItems([]);
     setSearchQuery('');
     setLastOrderId(null);
+    // Refresh transactions so TransactionHistory reflects the latest order
+    try {
+      const refreshedTransactions = await getPosTransactions({ limit: 50 });
+      setTransactions(refreshedTransactions);
+    } catch (err) {
+      // silently ignore refresh errors on close
+    }
   };
 
   return (

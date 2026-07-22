@@ -25,6 +25,7 @@ inventoryRouter.post('/items', createItem);                    // Create item
 inventoryRouter.get('/items/:id', getItemById);                // Get single item
 inventoryRouter.put('/items/:id', updateItem);                 // Update item
 inventoryRouter.delete('/items/:id', deleteItem);              // Delete item
+inventoryRouter.patch('/items/:id/stock', adjustStock);        // Adjust stock with audit entry
 
 // Design/gallery endpoints
 inventoryRouter.get('/designs', getDesigns);                   // List designs

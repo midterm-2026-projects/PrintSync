@@ -44,6 +44,13 @@ export const inventoryFixtures = {
   ],
 };
 
+const initialInventoryFixtures = structuredClone(inventoryFixtures);
+
+export function resetInventoryFixtures() {
+  inventoryFixtures.items = structuredClone(initialInventoryFixtures.items);
+  inventoryFixtures.designs = structuredClone(initialInventoryFixtures.designs);
+}
+
 export const posFixtures = {
   products: [
     { id: 1, productName: 'Cotton T-Shirt', price: 350, stock: 50, category: 'Garment', image_url: null },

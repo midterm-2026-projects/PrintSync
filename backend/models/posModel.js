@@ -184,7 +184,7 @@ export const posModel = {
       `SELECT o.order_id AS id,
               o.total_amount AS "totalAmount",
               o.created_at AS "createdAt",
-              COUNT(oi.id)::integer AS "itemsCount"
+              COALESCE(SUM(oi.quantity), 0)::integer AS "itemsCount"
        FROM orders o
        LEFT JOIN order_items oi ON o.order_id = oi.order_id
        GROUP BY o.order_id, o.total_amount, o.created_at
@@ -193,7 +193,12 @@ export const posModel = {
       [limit, offset]
     );
 
-    return rows;
+    // pg returns numeric columns as strings; convert to proper JS types
+    return rows.map((row) => ({
+      ...row,
+      totalAmount: Number(row.totalAmount),
+      itemsCount: Number(row.itemsCount),
+    }));
   },
 
   /**

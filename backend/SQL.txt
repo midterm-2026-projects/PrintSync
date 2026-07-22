@@ -1,0 +1,56 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.products (
+  id integer NOT NULL,
+  name text NOT NULL,
+  stock integer NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  sku text,
+  description text,
+  price numeric NOT NULL DEFAULT 0 CHECK (price >= 0::numeric),
+  category text,
+  image_url text,
+  reorder_level integer NOT NULL DEFAULT 0 CHECK (reorder_level >= 0),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  is_active boolean NOT NULL DEFAULT true,
+  CONSTRAINT products_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.orders (
+  order_id text NOT NULL,
+  total_amount numeric NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT orders_pkey PRIMARY KEY (order_id)
+);
+CREATE TABLE public.order_items (
+  id bigint NOT NULL DEFAULT nextval('order_items_id_seq'::regclass),
+  order_id text NOT NULL,
+  product_id integer NOT NULL,
+  product_name text NOT NULL,
+  quantity integer NOT NULL CHECK (quantity >= 1),
+  unit_price numeric NOT NULL CHECK (unit_price >= 0::numeric),
+  subtotal numeric NOT NULL CHECK (subtotal >= 0::numeric),
+  CONSTRAINT order_items_pkey PRIMARY KEY (id),
+  CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(order_id),
+  CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id)
+);
+CREATE TABLE public.designs (
+  id integer NOT NULL DEFAULT nextval('designs_id_seq'::regclass),
+  title text NOT NULL,
+  url text NOT NULL,
+  product_id integer,
+  uploaded_by text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT designs_pkey PRIMARY KEY (id),
+  CONSTRAINT designs_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id)
+);
+CREATE TABLE public.stock_movements (
+  id integer NOT NULL DEFAULT nextval('stock_movements_id_seq'::regclass),
+  product_id integer NOT NULL,
+  delta integer NOT NULL,
+  reason text,
+  performed_by text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT stock_movements_pkey PRIMARY KEY (id),
+  CONSTRAINT stock_movements_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id)
+);

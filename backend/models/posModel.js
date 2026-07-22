@@ -223,10 +223,59 @@ export const posModel = {
 
     const raw = rows?.[0];
     if (!raw) return { totalRevenue: 0, totalOrders: 0 };
-    return {
+    const result = {
       totalRevenue: Number(raw.totalRevenue) || 0,
       totalOrders: Number(raw.totalOrders) || 0,
     };
+    console.warn(`[posModel] queryKpiByPeriod(${_period}, ${interval}) =>`, result);
+    return result;
+  },
+
+  /**
+   * Get KPI (total revenue + number of orders) for ALL time — no period filter.
+   * Used as a fallback when period-filtered query returns 0 but orders exist.
+   * @returns {Promise<{totalRevenue: number, totalOrders: number}>}
+   */
+  async queryKpiAllTime() {
+    const { rows } = await pool.query(
+      `
+      SELECT
+        COALESCE(SUM(total_amount), 0) AS "totalRevenue",
+        COUNT(order_id) AS "totalOrders"
+      FROM public.orders
+    `
+    );
+
+    const raw = rows?.[0];
+    if (!raw) return { totalRevenue: 0, totalOrders: 0 };
+    const result = {
+      totalRevenue: Number(raw.totalRevenue) || 0,
+      totalOrders: Number(raw.totalOrders) || 0,
+    };
+    console.warn(`[posModel] queryKpiAllTime() =>`, result);
+    return result;
+  },
+
+  /**
+   * Get all-time total revenue (no period filter).
+   * @returns {Promise<number>}
+   */
+  async queryTotalRevenueAllTime() {
+    const { rows } = await pool.query(
+      `SELECT COALESCE(SUM(total_amount), 0) AS "total" FROM public.orders`
+    );
+    return Number(rows?.[0]?.total) || 0;
+  },
+
+  /**
+   * Get all-time order count (no period filter).
+   * @returns {Promise<number>}
+   */
+  async queryTotalOrdersAllTime() {
+    const { rows } = await pool.query(
+      `SELECT COUNT(order_id) AS "count" FROM public.orders`
+    );
+    return Number(rows?.[0]?.count) || 0;
   },
 
   /**

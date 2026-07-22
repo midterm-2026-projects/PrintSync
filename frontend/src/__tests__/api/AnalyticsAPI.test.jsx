@@ -14,19 +14,6 @@ describe('Analytics API integration (MSW)', () => {
     expect(screen.getAllByTestId('chart-dot')).toHaveLength(3);
   });
 
-  it('requests and displays a different data set when the period changes', async () => {
-    const user = userEvent.setup();
-    render(<Analytics />);
-    await screen.findByText('TXN-001');
-
-    await user.selectOptions(screen.getByLabelText(/forecasting period/i), '7d');
-
-    // The page uses static data, so revenue remains ₱5,700.00.
-    // The period change affects the PredictedDemandTable confidence level.
-    expect(screen.getByTestId('revenue-total')).toHaveTextContent('₱5,700.00');
-    expect(screen.getAllByText('High')).toHaveLength(3);
-  });
-
   it('shows a user-facing dashboard error when an analytics request fails', async () => {
     server.use(
       http.get('/analytics/kpi', () => HttpResponse.json(

@@ -29,23 +29,48 @@ export default function Analytics() {
       const [kpiData, trendData, txnData] = await Promise.all([
         getAnalyticsKpi(selectedPeriod).catch((err) => {
           console.warn('KPI fetch failed:', err.message);
-          return { totalRevenue: 0, totalOrders: 0 };
+          return null;
         }),
         getSalesTrend(selectedPeriod).catch((err) => {
           console.warn('Sales trend fetch failed:', err.message);
-          return { data: [] };
+          return null;
         }),
         getTransactionHistory(selectedPeriod).catch((err) => {
           console.warn('Transaction history fetch failed:', err.message);
-          return [];
+          return null;
         }),
       ]);
-      setKpi(kpiData);
-      setTrend(trendData);
-      setTransactions(txnData || []);
+
+      // Fallback: if KPI API returns 0 but transaction data has values,
+      // calculate revenue from transactions
+      let resolvedKpi = kpiData;
+      let resolvedTxn = txnData || [];
+      let resolvedTrend = trendData;
+
+      if (!resolvedKpi || (resolvedKpi.totalRevenue === 0 && resolvedKpi.totalOrders === 0)) {
+        if (Array.isArray(resolvedTxn) && resolvedTxn.length > 0) {
+          // Calculate KPI from transaction history as fallback
+          const txnRevenue = resolvedTxn.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+          resolvedKpi = { totalRevenue: txnRevenue, totalOrders: resolvedTxn.length };
+          console.warn(`Analytics: KPI fallback from transactions — revenue=${txnRevenue}, orders=${resolvedTxn.length}`);
+        } else if (resolvedKpi) {
+          resolvedKpi = { totalRevenue: 0, totalOrders: 0 };
+        }
+      }
+
+      if (!resolvedTrend) {
+        resolvedTrend = { data: [] };
+      }
+      if (!resolvedTxn) {
+        resolvedTxn = [];
+      }
+
+      setKpi(resolvedKpi);
+      setTrend(resolvedTrend);
+      setTransactions(resolvedTxn);
 
       // Debug: log what we got from the API
-      console.debug('Analytics API results:', { kpiData, trendData, txnCount: (txnData || []).length });
+      console.debug('Analytics API results:', { kpiData: resolvedKpi, trendData: resolvedTrend, txnCount: resolvedTxn.length });
     } catch (err) {
       setError(err.message);
     }

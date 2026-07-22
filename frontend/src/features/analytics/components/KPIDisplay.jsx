@@ -18,18 +18,26 @@ const KPIDisplay = ({ transactions, totalRevenue, totalOrders }) => {
     }).format(val || 0).replace('PHP', '₱').trim();
   };
 
-  // Support both direct props (from Analytics page connected to backend)
-  // and the legacy transactions-based calculation (for existing tests).
-  // If KPI API returns 0 but transactions have data, fall back to calculating from transactions.
+  // Fallback strategy (3 layers):
+  // 1. If totalRevenue is explicitly provided and > 0, use it.
+  // 2. If totalRevenue is 0 but transactions have data, calculate from transactions.
+  // 3. Otherwise fall back to 0.
   const txnTotal = calculateTotal(transactions);
+  const hasTxnData = Array.isArray(transactions) && transactions.length > 0;
+
   const displayRevenue =
-    totalRevenue !== undefined && (totalRevenue > 0 || txnTotal === 0)
+    totalRevenue !== undefined && totalRevenue > 0
       ? totalRevenue
-      : txnTotal;
+      : hasTxnData && txnTotal > 0
+        ? txnTotal
+        : (totalRevenue !== undefined ? totalRevenue : 0);
+
   const displayOrders =
-    totalOrders !== undefined && (totalOrders > 0 || !transactions?.length)
+    totalOrders !== undefined && totalOrders > 0
       ? totalOrders
-      : (transactions?.length || 0);
+      : hasTxnData
+        ? transactions.length
+        : (totalOrders !== undefined ? totalOrders : 0);
 
   return (
     <div id="kpi-container" style={{ padding: '10px', backgroundColor: '#f9f9f9', border: '1px solid #ddd' }}>

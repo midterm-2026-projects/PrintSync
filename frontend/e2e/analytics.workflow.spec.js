@@ -91,8 +91,10 @@ test.describe('Analytics Full Workflow', () => {
     // STEP 7: Verify KPI Display loads from backend
     // ══════════════════════════════════════════════════════════
     // Wait for the KPI data to load from the backend
+    // Use toHaveText to wait for actual API data (not the initial ₱0.00 render state)
     const revenueTotal = page.getByTestId('revenue-total');
-    await expect(revenueTotal).toBeVisible({ timeout: 15000 });
+    // Wait until the text changes from the initial "₱0.00" to a real value
+    await expect(revenueTotal).not.toHaveText('₱0.00', { timeout: 20000 });
     // Revenue should be > 0 since we created orders
     const revenueText = await revenueTotal.textContent();
     expect(revenueText).toMatch(/₱[0-9,]+\.\d{2}/);
@@ -153,9 +155,10 @@ test.describe('Analytics Full Workflow', () => {
 
     // PredictedDemandTable should update to 7d values:
     // 7d multiplier = 0.6: Cotton 60*0.6=36, Polo 45*0.6=27, Hoodie 30*0.6=18
-    await expect(page.getByText('36')).toBeVisible();
-    await expect(page.getByText('27')).toBeVisible();
-    await expect(page.getByText('18')).toBeVisible();
+    // Use exact:true to avoid matching transaction IDs that contain these numbers
+    await expect(page.getByRole('cell', { name: '36', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '27', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '18', exact: true })).toBeVisible();
 
     // Confidence should be "High" for 7d
     const highLabels = page.getByText('High', { exact: true });
@@ -171,9 +174,10 @@ test.describe('Analytics Full Workflow', () => {
 
     // PredictedDemandTable should update:
     // 90d multiplier = 1.7: Cotton 60*1.7=102, Polo 45*1.7=77, Hoodie 30*1.7=51
-    await expect(page.getByText('102')).toBeVisible();
-    await expect(page.getByText('77')).toBeVisible();
-    await expect(page.getByText('51')).toBeVisible();
+    // Use exact:true to avoid matching transaction IDs that contain these numbers
+    await expect(page.getByRole('cell', { name: '102', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '77', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '51', exact: true })).toBeVisible();
 
     // Confidence should be "Low" for 90d
     const lowLabels = page.getByText('Low', { exact: true });
@@ -188,7 +192,8 @@ test.describe('Analytics Full Workflow', () => {
     await page.waitForTimeout(1000);
 
     // Revert to Medium confidence
-    await expect(page.getByText('60')).toBeVisible();
+    // Use exact:true to avoid matching transaction IDs that contain '60'
+    await expect(page.getByRole('cell', { name: '60', exact: true })).toBeVisible();
     const mediumLabelsAgain = page.getByText('Medium', { exact: true });
     const mediumCountAgain = await mediumLabelsAgain.count();
     expect(mediumCountAgain).toBeGreaterThanOrEqual(3);

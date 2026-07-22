@@ -87,9 +87,16 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage/
 
+  # ─────────────────────────────────────────────
+  # 3. E2E Tests (runs automatically on push/PR to main)
+  # ─────────────────────────────────────────────
   inventory-e2e:
-    name: "Inventory E2E (manual)"
-    if: github.event_name == 'workflow_dispatch' && inputs.run_e2e == true
+    name: "Inventory E2E"
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_e2e == true)
+    needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
     env:
       E2E_RUN: "true"
@@ -114,13 +121,15 @@ jobs:
         run: npm ci
         working-directory: backend
 
-      - name: Install Chromium
+      - name: Install Chromium with system deps
         run: npx playwright install --with-deps chromium
         working-directory: frontend
 
       - name: Run inventory workflow
         run: npm run test:e2e
         working-directory: frontend
+        env:
+          SUPABASE_DB_URL: ${{ secrets.E2E_DATABASE_URL }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -129,12 +138,4 @@ jobs:
           name: inventory-playwright-report
           path: frontend/playwright-report/
 
-  # ─────────────────────────────────────────────
-  # 3. E2E Tests
-  # ─────────────────────────────────────────────
 
-
-
-  # ─────────────────────────────────────────────
-  # 4. Final
-  # ─────────────────────────────────────────────

@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react';
 import ReceiptItem from './ReceiptItem';
 
-const Receipt = ({ cartItems, onClose }) => {
-  // Requirement: Transaction ID in format TXN-YYYYMMDD-XXXXXX
+const Receipt = ({ cartItems, onClose, orderId: externalOrderId }) => {
+  // Use real order ID from backend if provided, otherwise generate client-side
   const transactionId = useMemo(() => {
+    if (externalOrderId) return externalOrderId;
     const now = new Date();
     const datePart = now.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
     const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 chars
     return `TXN-${datePart}-${randomPart}`;
-  }, []);
+  }, [externalOrderId]);
 
   const now = new Date();
 

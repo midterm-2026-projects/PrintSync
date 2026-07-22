@@ -14,6 +14,10 @@ export default defineConfig({
         target: process.env.VITE_API_TARGET || 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
+      '/pos': {
+        target: process.env.VITE_API_TARGET || 'http://127.0.0.1:3000',
+        changeOrigin: true,
+      },
     },
   },
   test: {

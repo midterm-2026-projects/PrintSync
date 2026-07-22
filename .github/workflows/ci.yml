@@ -93,7 +93,7 @@ jobs:
   e2e-tests:
     name: "E2E (Inventory + POS + Analytics)"
     if: |
-      (github.event_name == 'push') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'pull_request' && github.base_ref == 'main') ||
       (github.event_name == 'workflow_dispatch' && inputs.run_e2e == true)
     needs: [backend-tests, frontend-tests]
@@ -101,6 +101,9 @@ jobs:
     env:
       E2E_RUN: "true"
       E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+      # Fallback: if E2E_DATABASE_URL is not set, authorize using the backend's
+      # existing SUPABASE_DB_URL env (configured via GitHub Actions variables/secrets).
+      E2E_USE_BACKEND_ENV: "true"
 
     steps:
       - name: Checkout code

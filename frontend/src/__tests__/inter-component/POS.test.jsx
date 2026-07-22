@@ -8,43 +8,43 @@ import generateTransactionId from '../../features/pos/services/generatetransacti
 import { calculateFinancials, formatCurrency } from '../../features/pos/services/posService';
 
 describe('POS Page (inter-component)', () => {
-  it('renders POSSearchBar with search input', () => {
+  it('renders POSSearchBar with search input', async () => {
     render(<POS />);
-    expect(screen.getByLabelText(/Search Inventory/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/Search Inventory/i)).toBeInTheDocument();
   });
 
-  it('renders POSItemList with sample inventory items', () => {
+  it('renders POSItemList with sample inventory items', async () => {
     render(<POS />);
-    expect(screen.getByText('Cotton T-Shirt')).toBeInTheDocument();
+    expect(await screen.findByText('Cotton T-Shirt')).toBeInTheDocument();
     expect(screen.getByText('Polo Shirt')).toBeInTheDocument();
     expect(screen.getByText('Hoodie')).toBeInTheDocument();
   });
 
-  it('renders POSCart with Transaction Cart heading and empty state', () => {
+  it('renders POSCart with Transaction Cart heading and empty state', async () => {
     render(<POS />);
-    expect(screen.getByText('Transaction Cart')).toBeInTheDocument();
+    expect(await screen.findByText('Transaction Cart')).toBeInTheDocument();
     expect(screen.getByTestId('cart-count')).toHaveTextContent('0');
     expect(screen.getByText('Your cart is empty.')).toBeInTheDocument();
   });
 
-  it('renders POSTotals with subtotal, tax input, and total display', () => {
+  it('renders POSTotals with subtotal, tax input, and total display', async () => {
     render(<POS />);
-    expect(screen.getByTestId('subtotal-val')).toHaveTextContent('₱0.00');
+    expect(await screen.findByTestId('subtotal-val')).toHaveTextContent('₱0.00');
     expect(screen.getByLabelText(/Tax Percentage/i)).toBeInTheDocument();
     expect(screen.getByTestId('total-val')).toHaveTextContent('₱0.00');
   });
 
-  it('renders OrderSummary with checkout button disabled when cart is empty', () => {
+  it('renders OrderSummary with checkout button disabled when cart is empty', async () => {
     render(<POS />);
-    expect(screen.getByLabelText('unique item count')).toHaveTextContent('0');
+    expect(await screen.findByLabelText('unique item count')).toHaveTextContent('0');
     expect(screen.getByLabelText('total quantity')).toHaveTextContent('0');
     expect(screen.getByLabelText('grand total')).toHaveTextContent('₱0');
     expect(screen.getByRole('button', { name: /Proceed to checkout/i })).toBeDisabled();
   });
 
-  it('renders TransactionHistory empty state when no transactions exist', () => {
+  it('renders TransactionHistory empty state when no transactions exist', async () => {
     render(<POS />);
-    expect(screen.getByText('No transaction history found.')).toBeInTheDocument();
+    expect(await screen.findByText('No transaction history found.')).toBeInTheDocument();
   });
 
   it('renders Point of Sale heading', () => {
@@ -54,11 +54,11 @@ describe('POS Page (inter-component)', () => {
 });
 
 describe('POS Page - renders all POS components and services', () => {
-  it('renders POSSearchBar, POSItemList, POSCart, POSTotals, OrderSummary, CheckoutModal, Receipt, TransactionHistory, and ReceiptItem', () => {
+  it('renders POSSearchBar, POSItemList, POSCart, POSTotals, OrderSummary, CheckoutModal, Receipt, TransactionHistory, and ReceiptItem', async () => {
     render(<POS />);
 
     // POSSearchBar
-    expect(screen.getByLabelText(/Search Inventory/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/Search Inventory/i)).toBeInTheDocument();
 
     // POSItemList with sample data
     expect(screen.getByText('Cotton T-Shirt')).toBeInTheDocument();
@@ -101,18 +101,18 @@ describe('POS Page - renders all POS components and services', () => {
 });
 
 describe('POS Page - POSSearchBar drives POSItemList filtering', () => {
-  it('shows all inventory items by default', () => {
+  it('shows all inventory items by default', async () => {
     render(<POS />);
-    expect(screen.getByText('Cotton T-Shirt')).toBeInTheDocument();
+    expect(await screen.findByText('Cotton T-Shirt')).toBeInTheDocument();
     expect(screen.getByText('Polo Shirt')).toBeInTheDocument();
     expect(screen.getByText('Hoodie')).toBeInTheDocument();
     expect(screen.getByText('Mug')).toBeInTheDocument();
     expect(screen.getByText('Cap')).toBeInTheDocument();
   });
 
-  it('typing in search bar filters items to matching names', () => {
+  it('typing in search bar filters items to matching names', async () => {
     render(<POS />);
-    const searchInput = screen.getByLabelText(/Search Inventory/i);
+    const searchInput = await screen.findByLabelText(/Search Inventory/i);
 
     fireEvent.change(searchInput, { target: { value: 'Mug' } });
 
@@ -123,9 +123,9 @@ describe('POS Page - POSSearchBar drives POSItemList filtering', () => {
     expect(screen.queryByText('Cap')).not.toBeInTheDocument();
   });
 
-  it('typing partial name filters items containing the substring', () => {
+  it('typing partial name filters items containing the substring', async () => {
     render(<POS />);
-    const searchInput = screen.getByLabelText(/Search Inventory/i);
+    const searchInput = await screen.findByLabelText(/Search Inventory/i);
 
     fireEvent.change(searchInput, { target: { value: 'Shirt' } });
 
@@ -134,18 +134,18 @@ describe('POS Page - POSSearchBar drives POSItemList filtering', () => {
     expect(screen.queryByText('Hoodie')).not.toBeInTheDocument();
   });
 
-  it('searching with no matches shows "No matching items found."', () => {
+  it('searching with no matches shows "No matching items found."', async () => {
     render(<POS />);
-    const searchInput = screen.getByLabelText(/Search Inventory/i);
+    const searchInput = await screen.findByLabelText(/Search Inventory/i);
 
     fireEvent.change(searchInput, { target: { value: 'XYZ123' } });
 
     expect(screen.getByText('No matching items found.')).toBeInTheDocument();
   });
 
-  it('clearing search restores all inventory items', () => {
+  it('clearing search restores all inventory items', async () => {
     render(<POS />);
-    const searchInput = screen.getByLabelText(/Search Inventory/i);
+    const searchInput = await screen.findByLabelText(/Search Inventory/i);
 
     // Filter first
     fireEvent.change(searchInput, { target: { value: 'Mug' } });
@@ -161,9 +161,9 @@ describe('POS Page - POSSearchBar drives POSItemList filtering', () => {
     expect(screen.getByText('Cap')).toBeInTheDocument();
   });
 
-  it('search is case-insensitive', () => {
+  it('search is case-insensitive', async () => {
     render(<POS />);
-    const searchInput = screen.getByLabelText(/Search Inventory/i);
+    const searchInput = await screen.findByLabelText(/Search Inventory/i);
 
     fireEvent.change(searchInput, { target: { value: 'cotton' } });
 
@@ -172,19 +172,19 @@ describe('POS Page - POSSearchBar drives POSItemList filtering', () => {
 });
 
 describe('POS Page - Add to Cart and Checkout flow', () => {
-  it('adding item to cart increments cart item count', () => {
+  it('adding item to cart increments cart item count', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
 
     expect(screen.getByTestId('cart-count')).toHaveTextContent('1');
   });
 
-  it('adding same item twice increments quantity reflected in subtotal', () => {
+  it('adding same item twice increments quantity reflected in subtotal', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
     fireEvent.click(addButtons[0]);
 
@@ -195,10 +195,10 @@ describe('POS Page - Add to Cart and Checkout flow', () => {
     expect(screen.getByTestId('subtotal-val')).toHaveTextContent('₱700.00');
   });
 
-  it('cart items update the totals display', () => {
+  it('cart items update the totals display', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
 
     // Cotton T-Shirt has price 350, quantity 1
@@ -206,10 +206,10 @@ describe('POS Page - Add to Cart and Checkout flow', () => {
     expect(screen.getByTestId('total-val')).toHaveTextContent('₱392.00');
   });
 
-  it('adding multiple items updates unique item count and grand total in OrderSummary', () => {
+  it('adding multiple items updates unique item count and grand total in OrderSummary', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]); // Cotton T-Shirt (350)
     fireEvent.click(addButtons[1]); // Polo Shirt (450)
 
@@ -218,15 +218,15 @@ describe('POS Page - Add to Cart and Checkout flow', () => {
     expect(screen.getByLabelText('grand total')).toHaveTextContent('₱800');
   });
 
-  it('checkout button is disabled when cart is empty', () => {
+  it('checkout button is disabled when cart is empty', async () => {
     render(<POS />);
-    expect(screen.getByRole('button', { name: /Proceed to checkout/i })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: /Proceed to checkout/i })).toBeDisabled();
   });
 
-  it('checkout button becomes enabled when items are in cart', () => {
+  it('checkout button becomes enabled when items are in cart', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
 
     expect(screen.getByRole('button', { name: /Proceed to checkout/i })).not.toBeDisabled();

@@ -6,43 +6,43 @@ import POS from '../../pages/POS';
 import { server } from '../sample-backend/server';
 
 describe('POS API integration (MSW)', () => {
-  it('renders POSSearchBar with search input', () => {
+  it('renders POSSearchBar with search input', async () => {
     render(<POS />);
-    expect(screen.getByLabelText(/Search Inventory/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/Search Inventory/i)).toBeInTheDocument();
   });
 
-  it('renders all sample inventory items from the static data', () => {
+  it('renders all sample inventory items from the static data', async () => {
     render(<POS />);
-    expect(screen.getByText('Cotton T-Shirt')).toBeInTheDocument();
+    expect(await screen.findByText('Cotton T-Shirt')).toBeInTheDocument();
     expect(screen.getByText('Polo Shirt')).toBeInTheDocument();
     expect(screen.getByText('Hoodie')).toBeInTheDocument();
     expect(screen.getByText('Mug')).toBeInTheDocument();
     expect(screen.getByText('Cap')).toBeInTheDocument();
   });
 
-  it('starts with an empty cart', () => {
+  it('starts with an empty cart', async () => {
     render(<POS />);
-    expect(screen.getByTestId('cart-count')).toHaveTextContent('0');
+    expect(await screen.findByTestId('cart-count')).toHaveTextContent('0');
     expect(screen.getByText('Your cart is empty.')).toBeInTheDocument();
   });
 
-  it('renders POSTotals with zero-valued subtotal, tax, and total', () => {
+  it('renders POSTotals with zero-valued subtotal, tax, and total', async () => {
     render(<POS />);
-    expect(screen.getByTestId('subtotal-val')).toHaveTextContent('₱0.00');
+    expect(await screen.findByTestId('subtotal-val')).toHaveTextContent('₱0.00');
     expect(screen.getByTestId('total-val')).toHaveTextContent('₱0.00');
   });
 
-  it('renders OrderSummary with checkout button disabled when cart is empty', () => {
+  it('renders OrderSummary with checkout button disabled when cart is empty', async () => {
     render(<POS />);
-    expect(screen.getByLabelText('unique item count')).toHaveTextContent('0');
+    expect(await screen.findByLabelText('unique item count')).toHaveTextContent('0');
     expect(screen.getByLabelText('total quantity')).toHaveTextContent('0');
     expect(screen.getByLabelText('grand total')).toHaveTextContent('₱0');
     expect(screen.getByRole('button', { name: /Proceed to checkout/i })).toBeDisabled();
   });
 
-  it('renders TransactionHistory empty state when no transactions exist', () => {
+  it('renders TransactionHistory empty state when no transactions exist', async () => {
     render(<POS />);
-    expect(screen.getByText('No transaction history found.')).toBeInTheDocument();
+    expect(await screen.findByText('No transaction history found.')).toBeInTheDocument();
   });
 
   it('renders the Point of Sale heading', () => {
@@ -50,10 +50,10 @@ describe('POS API integration (MSW)', () => {
     expect(screen.getByText('Point of Sale')).toBeInTheDocument();
   });
 
-  it('adds an item to cart when "Add to Cart" is clicked', () => {
+  it('adds an item to cart when "Add to Cart" is clicked', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
 
     expect(screen.getByTestId('cart-count')).toHaveTextContent('1');
@@ -61,10 +61,10 @@ describe('POS API integration (MSW)', () => {
     expect(screen.getByTestId('total-val')).toHaveTextContent('₱392.00');
   });
 
-  it('increments quantity when the same item is added twice', () => {
+  it('increments quantity when the same item is added twice', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
     fireEvent.click(addButtons[0]);
 
@@ -73,10 +73,10 @@ describe('POS API integration (MSW)', () => {
     expect(screen.getByTestId('subtotal-val')).toHaveTextContent('₱700.00');
   });
 
-  it('adds multiple items and updates OrderSummary correctly', () => {
+  it('adds multiple items and updates OrderSummary correctly', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]); // Cotton T-Shirt (350)
     fireEvent.click(addButtons[1]); // Polo Shirt (450)
 
@@ -85,19 +85,19 @@ describe('POS API integration (MSW)', () => {
     expect(screen.getByLabelText('grand total')).toHaveTextContent('₱800');
   });
 
-  it('enables checkout button when items are in cart', () => {
+  it('enables checkout button when items are in cart', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
 
     expect(screen.getByRole('button', { name: /Proceed to checkout/i })).not.toBeDisabled();
   });
 
-  it('opens checkout modal when checkout button is clicked', () => {
+  it('opens checkout modal when checkout button is clicked', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
 
     fireEvent.click(screen.getByRole('button', { name: /Proceed to checkout/i }));
@@ -106,10 +106,10 @@ describe('POS API integration (MSW)', () => {
     expect(screen.getByText('Order Confirmation')).toBeInTheDocument();
   });
 
-  it('displays correct grand total in checkout modal', () => {
+  it('displays correct grand total in checkout modal', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]); // Cotton T-Shirt ₱350
     fireEvent.click(addButtons[1]); // Polo Shirt ₱450
 
@@ -118,23 +118,23 @@ describe('POS API integration (MSW)', () => {
     expect(screen.getByLabelText('checkout grand total')).toHaveTextContent('₱800');
   });
 
-  it('shows receipt after confirming order', () => {
+  it('shows receipt after confirming order', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
 
     fireEvent.click(screen.getByRole('button', { name: /Proceed to checkout/i }));
     fireEvent.click(screen.getByLabelText('Confirm order'));
 
-    expect(screen.getByLabelText('receipt')).toBeInTheDocument();
+    expect(await screen.findByLabelText('receipt')).toBeInTheDocument();
     expect(screen.getByLabelText('Close receipt')).toBeInTheDocument();
   });
 
-  it('closes receipt and clears cart when Close is clicked', () => {
+  it('closes receipt and clears cart when Close is clicked', async () => {
     render(<POS />);
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]);
 
     fireEvent.click(screen.getByRole('button', { name: /Proceed to checkout/i }));
@@ -142,16 +142,16 @@ describe('POS API integration (MSW)', () => {
     fireEvent.click(screen.getByLabelText('Close receipt'));
 
     expect(screen.queryByLabelText('receipt')).not.toBeInTheDocument();
-    expect(screen.getByTestId('cart-count')).toHaveTextContent('0');
+    expect(await screen.findByTestId('cart-count')).toHaveTextContent('0');
     expect(screen.getByText('Your cart is empty.')).toBeInTheDocument();
   });
 
-  it('transitions the transaction to TransactionHistory after order', () => {
+  it('transitions the transaction to TransactionHistory after order', async () => {
     render(<POS />);
 
-    expect(screen.getByText('No transaction history found.')).toBeInTheDocument();
+    expect(await screen.findByText('No transaction history found.')).toBeInTheDocument();
 
-    const addButtons = screen.getAllByText('Add to Cart');
+    const addButtons = await screen.findAllByText('Add to Cart');
     fireEvent.click(addButtons[0]); // Cotton T-Shirt
 
     fireEvent.click(screen.getByRole('button', { name: /Proceed to checkout/i }));
@@ -162,9 +162,9 @@ describe('POS API integration (MSW)', () => {
     expect(screen.getByText(/TXN-/)).toBeInTheDocument();
   });
 
-  it('searches and filters inventory items by name', () => {
+  it('searches and filters inventory items by name', async () => {
     render(<POS />);
-    const searchInput = screen.getByLabelText(/Search Inventory/i);
+    const searchInput = await screen.findByLabelText(/Search Inventory/i);
 
     fireEvent.change(searchInput, { target: { value: 'Mug' } });
 
@@ -175,18 +175,18 @@ describe('POS API integration (MSW)', () => {
     expect(screen.queryByText('Cap')).not.toBeInTheDocument();
   });
 
-  it('shows no matching items when search yields zero results', () => {
+  it('shows no matching items when search yields zero results', async () => {
     render(<POS />);
-    const searchInput = screen.getByLabelText(/Search Inventory/i);
+    const searchInput = await screen.findByLabelText(/Search Inventory/i);
 
     fireEvent.change(searchInput, { target: { value: 'XYZ123' } });
 
     expect(screen.getByText('No matching items found.')).toBeInTheDocument();
   });
 
-  it('searches are case-insensitive', () => {
+  it('searches are case-insensitive', async () => {
     render(<POS />);
-    const searchInput = screen.getByLabelText(/Search Inventory/i);
+    const searchInput = await screen.findByLabelText(/Search Inventory/i);
 
     fireEvent.change(searchInput, { target: { value: 'COTTON' } });
 
@@ -210,7 +210,7 @@ describe('POS API integration (MSW)', () => {
     render(<POS />);
 
     // Static inventory still renders as expected with MSW running
-    expect(screen.getByText('Cotton T-Shirt')).toBeInTheDocument();
+    expect(await screen.findByText('Cotton T-Shirt')).toBeInTheDocument();
     expect(screen.getByText('Hoodie')).toBeInTheDocument();
   });
 
@@ -229,7 +229,7 @@ describe('POS API integration (MSW)', () => {
     );
 
     render(<POS />);
-    expect(screen.getByText('Cotton T-Shirt')).toBeInTheDocument();
+    expect(await screen.findByText('Cotton T-Shirt')).toBeInTheDocument();
   });
 
   it('handles mocked POST /pos/orders endpoint with correct response shape', async () => {
@@ -310,7 +310,7 @@ describe('POS API integration (MSW)', () => {
 
     // Page uses static data so it still renders fine
     render(<POS />);
-    expect(screen.getByText('Cotton T-Shirt')).toBeInTheDocument();
+    expect(await screen.findByText('Cotton T-Shirt')).toBeInTheDocument();
     expect(screen.getByText('Point of Sale')).toBeInTheDocument();
   });
 });

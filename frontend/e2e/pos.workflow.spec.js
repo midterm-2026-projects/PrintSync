@@ -127,7 +127,7 @@ test.describe('POS Full Workflow', () => {
     await page.getByRole('button', { name: 'Confirm order' }).click();
 
     // Wait for the receipt to appear after the API call completes
-    await expect(page.getByLabel('receipt')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByLabel('receipt', { exact: true })).toBeVisible({ timeout: 15000 });
     console.log('DEBUG: Receipt visible after order confirmation');
 
     // Verify receipt shows transaction details
@@ -150,7 +150,7 @@ test.describe('POS Full Workflow', () => {
     // STEP 10: Close receipt
     // ══════════════════════════════════════════════════════════
     await page.getByRole('button', { name: 'Close receipt' }).click();
-    await expect(page.getByLabel('receipt')).toBeHidden();
+    await expect(page.getByLabel('receipt', { exact: true })).toBeHidden();
 
     // Verify cart is cleared after receipt close
     await expect(page.getByTestId('cart-count')).toHaveText('0');

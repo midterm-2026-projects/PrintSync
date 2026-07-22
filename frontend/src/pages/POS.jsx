@@ -155,7 +155,7 @@ export default function POS() {
       )}
 
       {showReceipt && (
-        <Receipt cartItems={cartItems} onClose={handleCloseReceipt} />
+        <Receipt cartItems={cartItems} onClose={handleCloseReceipt} orderId={lastOrderId} />
       )}
 
       <TransactionHistory transactions={transactions} />

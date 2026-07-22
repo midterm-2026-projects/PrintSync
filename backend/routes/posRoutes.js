@@ -10,6 +10,7 @@ import {
   createOrder,
   getOrders,
   getOrderById,
+  deleteOrderById,
   getTransactions,
 } from '../controllers/posController.js';
 
@@ -23,6 +24,7 @@ posRouter.get('/products/:id', getProductById);      // Get single product
 posRouter.post('/orders', createOrder);              // Create new order
 posRouter.get('/orders', getOrders);                 // List order history
 posRouter.get('/orders/:orderId', getOrderById);     // Get single order with items
+posRouter.delete('/orders/:orderId', deleteOrderById); // Delete order (test cleanup)
 
 // Alias for clarity in TransactionHistory component
 posRouter.get('/transactions', getTransactions);     // List order history

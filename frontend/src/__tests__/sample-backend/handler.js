@@ -82,7 +82,7 @@ export const handlers = [
     const fixture = fixtureFor(request);
     return HttpResponse.json({ ok: true, transactions: fixture.transactions, count: fixture.transactions.length });
   }),
-  http.get('/analytics/ai-insights', () => HttpResponse.json({ ok: true, insights: 'Restock custom prints before the next demand peak.', orderCount: 3 })),
+  http.get('/analytics/ai-insights', () => HttpResponse.json({ ok: true, insights: 'Based on your sales data, trends indicate high demand for custom prints.', orderCount: 3 })),
 
   // Inventory endpoints
   http.get('/inventory/items', ({ request }) => {

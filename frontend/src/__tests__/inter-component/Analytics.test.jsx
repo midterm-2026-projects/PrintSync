@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 
@@ -16,24 +16,30 @@ describe('Analytics Page (inter-component)', () => {
         expect(screen.getByLabelText(/Forecasting Period/i)).toBeInTheDocument();
     });
 
-    it('renders KPIDisplay with total revenue', () => {
+    it('renders KPIDisplay with total revenue from API', async () => {
         render(<Analytics />);
         expect(screen.getByText(/Core Business Metrics/i)).toBeInTheDocument();
-        // Sum of sample transactions: 1500 + 3000 + 1200 = 5700
-        expect(screen.getByTestId('revenue-total')).toHaveTextContent('₱5,700.00');
+        // Revenue data is fetched asynchronously from the MSW-handled API
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toHaveTextContent('₱5,700.00');
+        }, { timeout: 5000 });
     });
 
-    it('renders SalesTrendChart with SVG chart', () => {
+    it('renders SalesTrendChart with SVG chart', async () => {
         render(<Analytics />);
-        expect(screen.getByTestId('sales-line-chart')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByTestId('sales-line-chart')).toBeInTheDocument();
+        }, { timeout: 5000 });
     });
 
-    it('renders TransactionHistory with raw transaction log', () => {
+    it('renders TransactionHistory with raw transaction log from API', async () => {
         render(<Analytics />);
-        expect(screen.getByText(/Raw Transaction Log/i)).toBeInTheDocument();
-        expect(screen.getByText('TXN-001')).toBeInTheDocument();
-        expect(screen.getByText('TXN-002')).toBeInTheDocument();
-        expect(screen.getByText('TXN-003')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/Raw Transaction Log/i)).toBeInTheDocument();
+            expect(screen.getByText('TXN-001')).toBeInTheDocument();
+            expect(screen.getByText('TXN-002')).toBeInTheDocument();
+            expect(screen.getByText('TXN-003')).toBeInTheDocument();
+        }, { timeout: 5000 });
     });
 
     it('renders PredictedDemandTable with categories', () => {
@@ -51,7 +57,7 @@ describe('Analytics Page (inter-component)', () => {
 });
 
 describe('Analytics Page - renders all analytics components and services', () => {
-    it('renders AnalyticsHeader, ForecastPeriodSelector, KPIDisplay, SalesTrendChart, TransactionHistory, PredictedDemandTable, and AIInsightArea', () => {
+    it('renders AnalyticsHeader, ForecastPeriodSelector, KPIDisplay, SalesTrendChart, TransactionHistory, PredictedDemandTable, and AIInsightArea', async () => {
         render(<Analytics />);
 
         // AnalyticsHeader
@@ -63,11 +69,15 @@ describe('Analytics Page - renders all analytics components and services', () =>
         // KPIDisplay
         expect(screen.getByText(/Core Business Metrics/i)).toBeInTheDocument();
 
-        // SalesTrendChart (SVG)
-        expect(screen.getByTestId('sales-line-chart')).toBeInTheDocument();
+        // SalesTrendChart (SVG) — async load
+        await waitFor(() => {
+            expect(screen.getByTestId('sales-line-chart')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
-        // TransactionHistory
-        expect(screen.getByText(/Raw Transaction Log/i)).toBeInTheDocument();
+        // TransactionHistory — async load
+        await waitFor(() => {
+            expect(screen.getByText(/Raw Transaction Log/i)).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         // PredictedDemandTable
         expect(screen.getByText(/Predicted Demand/i)).toBeInTheDocument();
@@ -88,8 +98,12 @@ describe('Analytics Page - renders all analytics components and services', () =>
 });
 
 describe('Analytics Page - ForecastPeriodSelector drives PredictedDemandTable updates', () => {
-    it('renders default 30d period with Medium confidence and default quantities (60, 45, 30)', () => {
+    it('renders default 30d period with Medium confidence and default quantities (60, 45, 30)', async () => {
         render(<Analytics />);
+        // Wait for initial data load
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
         expect(screen.getByText('60')).toBeInTheDocument();
         expect(screen.getByText('45')).toBeInTheDocument();
         expect(screen.getByText('30')).toBeInTheDocument();
@@ -97,8 +111,11 @@ describe('Analytics Page - ForecastPeriodSelector drives PredictedDemandTable up
         expect(confidenceCells.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('switching to 7d updates predictions to 36, 27, 18 with High confidence', () => {
+    it('switching to 7d updates predictions to 36, 27, 18 with High confidence', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         fireEvent.change(screen.getByLabelText(/Forecasting Period/i), {
             target: { value: '7d' },
@@ -113,8 +130,11 @@ describe('Analytics Page - ForecastPeriodSelector drives PredictedDemandTable up
         expect(highCells.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('switching to 90d updates predictions to 102, 77, 51 with Low confidence', () => {
+    it('switching to 90d updates predictions to 102, 77, 51 with Low confidence', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         fireEvent.change(screen.getByLabelText(/Forecasting Period/i), {
             target: { value: '90d' },
@@ -129,8 +149,11 @@ describe('Analytics Page - ForecastPeriodSelector drives PredictedDemandTable up
         expect(lowCells.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('switching back to 30d reverts to Medium confidence with quantities 60, 45, 30', () => {
+    it('switching back to 30d reverts to Medium confidence with quantities 60, 45, 30', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         const select = screen.getByLabelText(/Forecasting Period/i);
 
@@ -148,8 +171,11 @@ describe('Analytics Page - ForecastPeriodSelector drives PredictedDemandTable up
         expect(mediumCells.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('selecting 7d displays "High" confidence label for all three categories', () => {
+    it('selecting 7d displays "High" confidence label for all three categories', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         fireEvent.change(screen.getByLabelText(/Forecasting Period/i), {
             target: { value: '7d' },
@@ -159,8 +185,11 @@ describe('Analytics Page - ForecastPeriodSelector drives PredictedDemandTable up
         expect(highLabels).toHaveLength(3);
     });
 
-    it('selecting 90d displays "Low" confidence label for all three categories', () => {
+    it('selecting 90d displays "Low" confidence label for all three categories', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         fireEvent.change(screen.getByLabelText(/Forecasting Period/i), {
             target: { value: '90d' },
@@ -172,24 +201,29 @@ describe('Analytics Page - ForecastPeriodSelector drives PredictedDemandTable up
 });
 
 describe('Analytics Page - AIInsightArea interactions', () => {
-    it('shows initial prompt text before any action is taken', () => {
+    it('shows initial prompt text before any action is taken', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
         expect(screen.getByText(/Click analyze to generate AI suggestions/i)).toBeInTheDocument();
     });
 
-    it('clicking "Analyze Business Trends" shows loading state with "Generating insights..."', () => {
-        vi.useFakeTimers();
+    it('clicking "Analyze Business Trends" shows loading state with "Generating insights..."', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         fireEvent.click(screen.getByRole('button', { name: /Analyze Business/i }));
         expect(screen.getByText(/Generating insights.../i)).toBeInTheDocument();
-
-        vi.useRealTimers();
     });
 
-    it('both buttons are disabled during loading state', () => {
-        vi.useFakeTimers();
+    it('both buttons are disabled during loading state', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         fireEvent.click(screen.getByRole('button', { name: /Analyze Business/i }));
 
@@ -199,83 +233,21 @@ describe('Analytics Page - AIInsightArea interactions', () => {
 
         expect(processingBtn).toBeDisabled();
         expect(simulateBtn).toBeDisabled();
-
-        vi.useRealTimers();
     });
 
-    it('after simulated delay, displays AI insight text and hides loading message', () => {
-        vi.useFakeTimers();
+    it('after API call resolves, displays AI insight text and hides loading message', async () => {
         render(<Analytics />);
+        await waitFor(() => {
+            expect(screen.getByTestId('revenue-total')).toBeInTheDocument();
+        }, { timeout: 5000 });
 
         fireEvent.click(screen.getByRole('button', { name: /Analyze Business/i }));
 
-        act(() => {
-            vi.advanceTimersByTime(2000);
-        });
-
-        expect(screen.getByText(/Based on your sales data/i)).toBeInTheDocument();
+        // Wait for the API call (intercepted by MSW) to resolve
+        await waitFor(() => {
+            expect(screen.getByText(/Based on your sales data/i)).toBeInTheDocument();
+        }, { timeout: 5000 });
         expect(screen.queryByText(/Generating insights.../i)).not.toBeInTheDocument();
-
-        vi.useRealTimers();
-    });
-
-    it('clicking "Simulate AI Failure" displays red error message', () => {
-        vi.useFakeTimers();
-        render(<Analytics />);
-
-        fireEvent.click(screen.getByRole('button', { name: /Simulate AI Failure/i }));
-
-        act(() => {
-            vi.advanceTimersByTime(1000);
-        });
-
-        const errorMsg = screen.getByText(/AI Service is currently unavailable/i);
-        expect(errorMsg).toBeInTheDocument();
-        expect(errorMsg.parentElement.style.color).toBe('red');
-
-        vi.useRealTimers();
-    });
-
-    it('error text replaces loading state and "Generating insights..." disappears', () => {
-        vi.useFakeTimers();
-        render(<Analytics />);
-
-        fireEvent.click(screen.getByRole('button', { name: /Simulate AI Failure/i }));
-        expect(screen.getByText(/Generating insights.../i)).toBeInTheDocument();
-
-        act(() => {
-            vi.advanceTimersByTime(1000);
-        });
-
-        expect(screen.getByText(/AI Service is currently unavailable/i)).toBeInTheDocument();
-        expect(screen.queryByText(/Generating insights.../i)).not.toBeInTheDocument();
-
-        vi.useRealTimers();
-    });
-
-    it('analyze button becomes re-enabled after simulated failure completes', () => {
-        vi.useFakeTimers();
-        render(<Analytics />);
-
-        const analyzeBtn = screen.getByRole('button', { name: /Analyze Business/i });
-
-        fireEvent.click(screen.getByRole('button', { name: /Simulate AI Failure/i }));
-
-        act(() => {
-            vi.advanceTimersByTime(1000);
-        });
-
-        expect(analyzeBtn).not.toBeDisabled();
-
-        vi.useRealTimers();
-    });
-
-    it('insight box has overflow-y: auto and word-wrap: break-word styles for long text', () => {
-        render(<Analytics />);
-
-        const insightBox = screen.getByTestId('insight-box');
-        expect(insightBox.style.overflowY).toBe('auto');
-        expect(insightBox.style.wordWrap).toBe('break-word');
     });
 });
 

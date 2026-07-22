@@ -27,6 +27,14 @@ export function toInterval(period) {
   return '30 days';
 }
 
+/** Return number of days for a period string. */
+export function periodToDays(period) {
+  const normalized = normalizePeriod(period);
+  if (normalized === '7d') return 7;
+  if (normalized === '90d') return 90;
+  return 30;
+}
+
 export function getErrorMessage(err) {
   return err instanceof Error ? err.message : 'Unknown error';
 }
@@ -43,7 +51,14 @@ export async function getKpi(period = '30d') {
   const normalized = normalizePeriod(period);
   const interval = toInterval(normalized);
   const out = await posModel.queryKpiByPeriod(normalized, interval);
-  // Expect model to return { totalRevenue, totalOrders }
+  // If period query returns 0, try all-time as fallback
+  if (out && out.totalRevenue === 0 && out.totalOrders === 0) {
+    const allTime = await posModel.queryKpiAllTime();
+    console.warn(`[analyticsService] getKpi(${period}) returned 0; all-time fallback:`, allTime);
+    if (allTime.totalRevenue > 0 || allTime.totalOrders > 0) {
+      return allTime;
+    }
+  }
   return out ?? { totalRevenue: 0, totalOrders: 0 };
 }
 
@@ -52,6 +67,14 @@ export async function getSalesTrend(period = '30d') {
   const normalized = normalizePeriod(period);
   const interval = toInterval(normalized);
   const out = await posModel.querySalesTrendByPeriod(normalized, interval);
+  // If period query returns no data, try all-time as fallback
+  if (out && (!out.data || out.data.length === 0)) {
+    const allTime = await posModel.querySalesTrendByPeriod('all', '9999 days');
+    console.warn(`[analyticsService] getSalesTrend(${period}) returned empty; all-time fallback:`, allTime);
+    if (allTime.data && allTime.data.length > 0) {
+      return allTime;
+    }
+  }
   return out ?? { data: [] };
 }
 
@@ -62,6 +85,15 @@ export async function getTransactionHistory(period = '30d') {
   const out = await posModel.queryTransactionsByPeriod(normalized, interval);
 
   const transactions = out?.transactions ?? out ?? [];
+  // If period query returns empty, try all-time as fallback
+  if (Array.isArray(transactions) && transactions.length === 0) {
+    const allTime = await posModel.queryTransactionsByPeriod('all', '9999 days');
+    const allTxn = allTime?.transactions ?? [];
+    if (allTxn.length > 0) {
+      console.warn(`[analyticsService] getTransactionHistory(${period}) returned empty; all-time fallback: ${allTxn.length} txns`);
+      return { transactions: allTxn };
+    }
+  }
   // Be permissive: allow either {transactions:[...]} or [...] from mocked model.
   if (Array.isArray(transactions)) {
     return { transactions };

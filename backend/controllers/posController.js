@@ -99,6 +99,27 @@ export async function getOrders(req, res) {
 }
 
 /**
+ * DELETE /pos/orders/:orderId — Delete an order (for test cleanup)
+ */
+export async function deleteOrderById(req, res) {
+  try {
+    const { orderId } = req.params;
+
+    if (!orderId || !orderId.trim()) {
+      return res.status(400).json({ ok: false, error: 'Order ID is required' });
+    }
+
+    await posService.deleteOrder(orderId);
+
+    return res.status(200).json({ ok: true, message: 'Order deleted successfully' });
+  } catch (err) {
+    const message = getErrorMessage(err);
+    const statusCode = message.includes('not found') ? 404 : 500;
+    return res.status(statusCode).json({ ok: false, error: message });
+  }
+}
+
+/**
  * GET /pos/orders/:orderId — Get single order with line items
  */
 export async function getOrderById(req, res) {

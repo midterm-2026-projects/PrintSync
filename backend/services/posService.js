@@ -150,6 +150,20 @@ export const posService = {
   },
 
   /**
+   * Delete an order by ID (for test cleanup).
+   */
+  async deleteOrder(orderId) {
+    if (!orderId || !orderId.trim()) {
+      throw new Error('Order ID is required');
+    }
+    const deleted = await posModel.deleteOrder(orderId);
+    if (!deleted) {
+      throw new Error(`Order not found with id: ${orderId}`);
+    }
+    return deleted;
+  },
+
+  /**
    * Get single order with line items.
    */
   async getOrderById(orderId) {

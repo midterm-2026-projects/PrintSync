@@ -10,7 +10,7 @@ export default function InventoryFilter({ items = [], onFilteredItems }) {
   const filteredItems = useMemo(() => {
     const safeItems = items || [];
     return safeItems.filter((item) => {
-      const name = (item?.productName ?? '').toLowerCase();
+      const name = (item?.name ?? item?.productName ?? '').toLowerCase();
       const category = item?.category ?? '';
 
       const matchesSearch = name.includes(searchQuery.toLowerCase());

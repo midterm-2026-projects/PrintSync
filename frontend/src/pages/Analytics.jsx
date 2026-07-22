@@ -27,13 +27,25 @@ export default function Analytics() {
     setError('');
     try {
       const [kpiData, trendData, txnData] = await Promise.all([
-        getAnalyticsKpi(selectedPeriod),
-        getSalesTrend(selectedPeriod),
-        getTransactionHistory(selectedPeriod),
+        getAnalyticsKpi(selectedPeriod).catch((err) => {
+          console.warn('KPI fetch failed:', err.message);
+          return { totalRevenue: 0, totalOrders: 0 };
+        }),
+        getSalesTrend(selectedPeriod).catch((err) => {
+          console.warn('Sales trend fetch failed:', err.message);
+          return { data: [] };
+        }),
+        getTransactionHistory(selectedPeriod).catch((err) => {
+          console.warn('Transaction history fetch failed:', err.message);
+          return [];
+        }),
       ]);
       setKpi(kpiData);
       setTrend(trendData);
       setTransactions(txnData || []);
+
+      // Debug: log what we got from the API
+      console.debug('Analytics API results:', { kpiData, trendData, txnCount: (txnData || []).length });
     } catch (err) {
       setError(err.message);
     }

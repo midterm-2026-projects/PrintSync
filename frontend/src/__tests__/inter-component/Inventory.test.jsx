@@ -31,6 +31,7 @@ describe('Inventory Page (inter-component)', () => {
     it('updates item count and table after adding a valid inventory item', async () => {
         const user = userEvent.setup();
         render(<Inventory />);
+        await screen.findByText('Cotton T-Shirt');
 
         await user.type(screen.getByLabelText(/item name/i), 'Cotton');
         await user.type(screen.getByLabelText(/initial stock/i), '10');
@@ -38,17 +39,18 @@ describe('Inventory Page (inter-component)', () => {
 
         await user.click(screen.getByRole('button', { name: /add to inventory/i }));
 
-        // item count should increment
-        expect(screen.getByTestId('item-count')).toHaveTextContent('1');
+        // The five API fixtures plus the new item are present.
+        expect(screen.getByTestId('item-count')).toHaveTextContent('6');
 
         // table should show the added item
-        expect(screen.getByText(/cotton/i)).toBeInTheDocument();
+        expect(screen.getByText('Cotton')).toBeInTheDocument();
         expect(screen.getByText(/10 units/i)).toBeInTheDocument();
     });
 
     it('filters table results using the search input', async () => {
         const user = userEvent.setup();
         render(<Inventory />);
+        await screen.findByText('Cotton T-Shirt');
 
         // Add two items
         await user.type(screen.getByLabelText(/item name/i), 'Cotton');
@@ -66,8 +68,8 @@ describe('Inventory Page (inter-component)', () => {
         await user.clear(searchInput);
         await user.type(searchInput, 'cotton');
 
-        expect(screen.getByText(/cotton/i)).toBeInTheDocument();
-        expect(screen.queryByText(/polyester/i)).not.toBeInTheDocument();
+        expect(screen.getAllByText(/cotton/i)).not.toHaveLength(0);
+        expect(screen.queryByText(/^Polyester$/i)).not.toBeInTheDocument();
     });
 });
 

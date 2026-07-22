@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 import AnalyticsHeader from '../features/analytics/components/AnalyticsHeader';
 import ForecastPeriodSelector from '../features/analytics/components/ForecastPeriodSelector';
@@ -8,36 +8,66 @@ import TransactionHistory from '../features/analytics/components/TransactionHist
 import AIInsightArea from '../features/analytics/components/AIInsightArea';
 import PredictedDemandTable from '../features/analytics/components/PredictedDemandTable';
 
-const SAMPLE_TRANSACTIONS = [
-  { id: 'TXN-001', amount: 1500 },
-  { id: 'TXN-002', amount: 3000 },
-  { id: 'TXN-003', amount: 1200 },
-];
-
-const SAMPLE_CHART_DATA = [
-  { date: '2023-10-25', amount: 1500 },
-  { date: '2023-10-26', amount: 3000 },
-  { date: '2023-10-27', amount: 1200 },
-];
+import {
+  getAnalyticsKpi,
+  getSalesTrend,
+  getTransactionHistory,
+  getAiInsights,
+} from '../features/analytics/services/analyticsApi';
 
 export default function Analytics() {
   const [period, setPeriod] = useState('30d');
+  const [kpi, setKpi] = useState({ totalRevenue: 0, totalOrders: 0 });
+  const [trend, setTrend] = useState({ data: [] });
+  const [transactions, setTransactions] = useState([]);
+  const [error, setError] = useState('');
+
+  // Load analytics data from backend
+  const loadAnalytics = useCallback(async (selectedPeriod) => {
+    setError('');
+    try {
+      const [kpiData, trendData, txnData] = await Promise.all([
+        getAnalyticsKpi(selectedPeriod),
+        getSalesTrend(selectedPeriod),
+        getTransactionHistory(selectedPeriod),
+      ]);
+      setKpi(kpiData);
+      setTrend(trendData);
+      setTransactions(txnData || []);
+    } catch (err) {
+      setError(err.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAnalytics(period);
+  }, [period, loadAnalytics]);
+
+  // Map trend data for SalesTrendChart component
+  const chartData = trend?.data?.length > 0 ? trend.data : [];
+
+  const handleAnalyzeInsights = useCallback(async () => {
+    const result = await getAiInsights(15);
+    return result.insights;
+  }, []);
 
   return (
     <div>
-      <AnalyticsHeader lastUpdated="2023-10-27" />
+      <AnalyticsHeader lastUpdated={new Date().toISOString().split('T')[0]} />
+
+      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
 
       <ForecastPeriodSelector value={period} onChange={setPeriod} />
 
-      <KPIDisplay transactions={SAMPLE_TRANSACTIONS} />
+      <KPIDisplay transactions={transactions} totalRevenue={kpi.totalRevenue} totalOrders={kpi.totalOrders} />
 
-      <SalesTrendChart data={SAMPLE_CHART_DATA} />
+      <SalesTrendChart data={chartData} />
 
-      <TransactionHistory transactions={SAMPLE_TRANSACTIONS} />
+      <TransactionHistory transactions={transactions} />
 
       <PredictedDemandTable period={period} />
 
-      <AIInsightArea />
+      <AIInsightArea onFetchInsights={handleAnalyzeInsights} />
     </div>
   );
 }

@@ -1,24 +1,41 @@
 import React, { useState } from 'react';
 
-const AIInsightArea = () => {
+const AIInsightArea = ({ onFetchInsights }) => {
   const [loading, setLoading] = useState(false);
   const [insight, setInsight] = useState("");
   const [error, setError] = useState("");
 
-  const handleAnalyze = (simulateError = false) => {
+  const handleAnalyze = async () => {
     setLoading(true);
     setInsight("");
     setError("");
 
-    // Simulate AI Service Call
-    setTimeout(() => {
-      if (simulateError) {
-        setError("Error: AI Service is currently unavailable. Please check your connection and try again.");
-        setLoading(false);
-      } else {
-        setInsight("Based on your sales data, trends indicate high demand for custom prints.");
+    if (onFetchInsights) {
+      try {
+        const result = await onFetchInsights();
+        setInsight(result);
+      } catch (err) {
+        setError(`Error: AI Service is currently unavailable. Please check your connection and try again. (${err.message})`);
+      } finally {
         setLoading(false);
       }
+    } else {
+      // Fallback: simulate AI Service Call (when no fetch function provided)
+      setTimeout(() => {
+        setInsight("Based on your sales data, trends indicate high demand for custom prints.");
+        setLoading(false);
+      }, 1000);
+    }
+  };
+
+  const handleSimulateError = () => {
+    setLoading(true);
+    setInsight("");
+    setError("");
+
+    setTimeout(() => {
+      setError("Error: AI Service is currently unavailable. Please check your connection and try again.");
+      setLoading(false);
     }, 1000);
   };
 
@@ -27,13 +44,13 @@ const AIInsightArea = () => {
       <h3>AI Business Insights</h3>
       
       <div style={{ display: 'flex', gap: '10px' }}>
-        <button onClick={() => handleAnalyze(false)} disabled={loading}>
+        <button onClick={handleAnalyze} disabled={loading}>
           {loading ? "Processing..." : "Analyze Business Trends"}
         </button>
         
         {/* Helper button for testing the failure scenario */}
         <button 
-          onClick={() => handleAnalyze(true)} 
+          onClick={handleSimulateError} 
           disabled={loading}
           style={{ fontSize: '10px', opacity: 0.5 }}
         >
@@ -67,3 +84,4 @@ const AIInsightArea = () => {
 };
 
 export default AIInsightArea;
+

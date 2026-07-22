@@ -232,12 +232,21 @@ test.describe('Analytics Full Workflow', () => {
   // CLEANUP
   // ══════════════════════════════════════════════════════════
   test.afterEach(async ({ page }) => {
-    // Clean up the test product (orders cascade delete via DB constraint)
-    await page.evaluate(async (ids) => {
-      if (ids.itemId) {
-        await fetch(`/inventory/items/${ids.itemId}`, { method: 'DELETE' });
-      }
-    }, { itemId: createdItemId, orderId: createdOrderId });
+    // Clean up orders first, then the test product (avoid FK constraint issues)
+    try {
+      await page.evaluate(async (ids) => {
+        // Delete orders first (they reference the product via FK)
+        if (ids.orderId) {
+          await fetch(`/pos/orders/${ids.orderId}`, { method: 'DELETE' }).catch(() => {});
+        }
+        // Then delete the product (soft delete, sets is_active=false)
+        if (ids.itemId) {
+          await fetch(`/inventory/items/${ids.itemId}`, { method: 'DELETE' }).catch(() => {});
+        }
+      }, { itemId: createdItemId, orderId: createdOrderId });
+    } catch (err) {
+      console.log(`DEBUG cleanup error (non-fatal): ${err.message}`);
+    }
     console.log('DEBUG cleanup done for item', createdItemId);
   });
 });

@@ -27,6 +27,14 @@ export function toInterval(period) {
   return '30 days';
 }
 
+/** Return number of days for a period string. */
+export function periodToDays(period) {
+  const normalized = normalizePeriod(period);
+  if (normalized === '7d') return 7;
+  if (normalized === '90d') return 90;
+  return 30;
+}
+
 export function getErrorMessage(err) {
   return err instanceof Error ? err.message : 'Unknown error';
 }

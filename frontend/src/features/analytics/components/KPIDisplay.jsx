@@ -19,9 +19,17 @@ const KPIDisplay = ({ transactions, totalRevenue, totalOrders }) => {
   };
 
   // Support both direct props (from Analytics page connected to backend)
-  // and the legacy transactions-based calculation (for existing tests)
-  const displayRevenue = totalRevenue !== undefined ? totalRevenue : calculateTotal(transactions);
-  const displayOrders = totalOrders !== undefined ? totalOrders : (transactions?.length || 0);
+  // and the legacy transactions-based calculation (for existing tests).
+  // If KPI API returns 0 but transactions have data, fall back to calculating from transactions.
+  const txnTotal = calculateTotal(transactions);
+  const displayRevenue =
+    totalRevenue !== undefined && (totalRevenue > 0 || txnTotal === 0)
+      ? totalRevenue
+      : txnTotal;
+  const displayOrders =
+    totalOrders !== undefined && (totalOrders > 0 || !transactions?.length)
+      ? totalOrders
+      : (transactions?.length || 0);
 
   return (
     <div id="kpi-container" style={{ padding: '10px', backgroundColor: '#f9f9f9', border: '1px solid #ddd' }}>

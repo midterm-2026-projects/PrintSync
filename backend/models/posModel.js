@@ -221,7 +221,12 @@ export const posModel = {
       [interval]
     );
 
-    return rows?.[0] ?? { totalRevenue: 0, totalOrders: 0 };
+    const raw = rows?.[0];
+    if (!raw) return { totalRevenue: 0, totalOrders: 0 };
+    return {
+      totalRevenue: Number(raw.totalRevenue) || 0,
+      totalOrders: Number(raw.totalOrders) || 0,
+    };
   },
 
   /**
@@ -283,6 +288,24 @@ export const posModel = {
         createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
       })),
     };
+  },
+
+  /**
+   * Delete an order and its associated order_items (cascade delete).
+   * Used for test cleanup.
+   *
+   * @param {string} orderId - The order ID to delete
+   * @returns {Promise<boolean>} true if deleted, false if not found
+   */
+  async deleteOrder(orderId) {
+    if (!orderId) throw new Error('Order ID cannot be empty');
+
+    const { rows } = await pool.query(
+      `DELETE FROM public.orders WHERE order_id = $1 RETURNING order_id`,
+      [orderId]
+    );
+
+    return rows.length > 0;
   },
 
   /**

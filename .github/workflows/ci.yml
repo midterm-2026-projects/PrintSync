@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       run_e2e:
-        description: "Run the inventory Playwright workflow against the configured E2E database"
+        description: "Run all E2E Playwright workflows (inventory, POS, analytics) against the configured E2E database"
         required: true
         type: boolean
         default: false
@@ -88,10 +88,10 @@ jobs:
           path: frontend/coverage/
 
   # ─────────────────────────────────────────────
-  # 3. E2E Tests (runs automatically on push/PR to main)
+  # 3. E2E Tests — Inventory, POS, and Analytics (runs automatically on push/PR to main)
   # ─────────────────────────────────────────────
-  inventory-e2e:
-    name: "Inventory E2E"
+  e2e-tests:
+    name: "E2E (Inventory + POS + Analytics)"
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'pull_request' && github.base_ref == 'main') ||
@@ -125,7 +125,7 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: frontend
 
-      - name: Run inventory workflow
+      - name: Run all e2e workflows (inventory, POS, analytics)
         run: npm run test:e2e
         working-directory: frontend
         env:
@@ -135,7 +135,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: inventory-playwright-report
+          name: e2e-playwright-report
           path: frontend/playwright-report/
 
 

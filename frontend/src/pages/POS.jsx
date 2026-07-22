@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import POSSearchBar from '../features/pos/components/POSSearchBar';
 import POSItemList from '../features/pos/components/POSItemList';
@@ -9,23 +9,52 @@ import CheckoutModal from '../features/pos/components/Checkoutmodal';
 import Receipt from '../features/pos/components/Receipt';
 import TransactionHistory from '../features/pos/components/TransactionHistory';
 
-import generateTransactionId from '../features/pos/services/generatetransactionId';
-import { calculateFinancials, formatCurrency } from '../features/pos/services/posService';
-
-const SAMPLE_INVENTORY = [
-  { id: 1, productName: 'Cotton T-Shirt', price: 350, stock: 50 },
-  { id: 2, productName: 'Polo Shirt', price: 450, stock: 30 },
-  { id: 3, productName: 'Hoodie', price: 750, stock: 20 },
-  { id: 4, productName: 'Mug', price: 250, stock: 100 },
-  { id: 5, productName: 'Cap', price: 300, stock: 40 },
-];
+import { getPosProducts, createPosOrder, getPosTransactions } from '../features/pos/services/posApi';
+import { calculateFinancials } from '../features/pos/services/posService';
 
 export default function POS() {
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItems, setCartItems] = useState([]);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState(null);
   const [transactions, setTransactions] = useState([]);
+
+  // Load products from backend on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPosData() {
+      try {
+        const [loadedProducts, loadedTransactions] = await Promise.all([
+          getPosProducts(),
+          getPosTransactions({ limit: 50 }),
+        ]);
+        if (!isMounted) return;
+        setProducts(loadedProducts);
+        setTransactions(loadedTransactions);
+      } catch (loadError) {
+        if (isMounted) setError(loadError.message);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadPosData();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Filter products based on search query (client-side for responsiveness)
+  const filteredProducts = React.useMemo(() => {
+    if (!searchQuery.trim()) return products;
+    const term = searchQuery.toLowerCase().trim();
+    return products.filter((p) =>
+      p.productName && p.productName.toLowerCase().includes(term)
+    );
+  }, [products, searchQuery]);
 
   const handleSelectItem = (item) => {
     setCartItems((prev) => {
@@ -53,21 +82,33 @@ export default function POS() {
     setShowCheckout(true);
   };
 
-  const handleConfirmOrder = () => {
-    const transactionId = generateTransactionId();
-    const { total } = calculateFinancials(cartItems, 12);
+  const handleConfirmOrder = async () => {
+    try {
+      setError('');
 
-    const newTransaction = {
-      id: transactionId,
-      timestamp: new Date().toISOString(),
-      totalAmount: total,
-      status: 'completed',
-      itemsCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    };
+      // Map cart items to the API format: { product_id, quantity }
+      const orderItems = cartItems.map((item) => ({
+        product_id: item.id,
+        quantity: item.quantity,
+      }));
 
-    setTransactions((prev) => [...prev, newTransaction]);
-    setShowCheckout(false);
-    setShowReceipt(true);
+      const order = await createPosOrder(orderItems);
+      setLastOrderId(order.orderId);
+
+      // Refresh products (to get updated stock levels)
+      const refreshedProducts = await getPosProducts();
+      setProducts(refreshedProducts);
+
+      // Refresh transactions
+      const refreshedTransactions = await getPosTransactions({ limit: 50 });
+      setTransactions(refreshedTransactions);
+
+      setShowCheckout(false);
+      setShowReceipt(true);
+    } catch (err) {
+      setError(err.message);
+      setShowCheckout(false);
+    }
   };
 
   const handleCancelOrder = () => {
@@ -78,16 +119,23 @@ export default function POS() {
     setShowReceipt(false);
     setCartItems([]);
     setSearchQuery('');
+    setLastOrderId(null);
   };
+
+  if (isLoading) {
+    return <p>Loading POS…</p>;
+  }
 
   return (
     <div>
       <h2>Point of Sale</h2>
 
+      {error && <p role="alert">{error}</p>}
+
       <POSSearchBar value={searchQuery} onChange={setSearchQuery} />
 
       <POSItemList
-        inventory={SAMPLE_INVENTORY}
+        inventory={filteredProducts}
         searchQuery={searchQuery}
         onSelectItem={handleSelectItem}
       />

@@ -5,6 +5,20 @@ import { describe, expect, it } from 'vitest';
 import POS from '../../pages/POS';
 import { server } from '../sample-backend/server';
 
+/*
+ * Helper: override GET /pos/transactions to return empty orders
+ * so tests that check "No transaction history found." work correctly.
+ */
+function useEmptyTransactions() {
+  server.use(
+    http.get('/pos/transactions', () => HttpResponse.json({
+      ok: true,
+      orders: [],
+      count: 0,
+    })),
+  );
+}
+
 describe('POS API integration (MSW)', () => {
   it('renders POSSearchBar with search input', async () => {
     render(<POS />);
@@ -41,6 +55,7 @@ describe('POS API integration (MSW)', () => {
   });
 
   it('renders TransactionHistory empty state when no transactions exist', async () => {
+    useEmptyTransactions();
     render(<POS />);
     expect(await screen.findByText('No transaction history found.')).toBeInTheDocument();
   });
@@ -139,6 +154,9 @@ describe('POS API integration (MSW)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Proceed to checkout/i }));
     fireEvent.click(screen.getByLabelText('Confirm order'));
+
+    expect(await screen.findByLabelText('receipt')).toBeInTheDocument();
+
     fireEvent.click(screen.getByLabelText('Close receipt'));
 
     expect(screen.queryByLabelText('receipt')).not.toBeInTheDocument();
@@ -147,6 +165,14 @@ describe('POS API integration (MSW)', () => {
   });
 
   it('transitions the transaction to TransactionHistory after order', async () => {
+    // Start with empty transactions to verify the empty state
+    server.use(
+      http.get('/pos/transactions', () => HttpResponse.json({
+        ok: true,
+        orders: [],
+        count: 0,
+      })),
+    );
     render(<POS />);
 
     expect(await screen.findByText('No transaction history found.')).toBeInTheDocument();
@@ -155,9 +181,20 @@ describe('POS API integration (MSW)', () => {
     fireEvent.click(addButtons[0]); // Cotton T-Shirt
 
     fireEvent.click(screen.getByRole('button', { name: /Proceed to checkout/i }));
-    fireEvent.click(screen.getByLabelText('Confirm order'));
-    fireEvent.click(screen.getByLabelText('Close receipt'));
 
+    // Confirm the order - this triggers an async API call
+    fireEvent.click(screen.getByLabelText('Confirm order'));
+
+    // Wait for the receipt to appear after the async confirm completes
+    const closeButton = await screen.findByLabelText('Close receipt');
+
+    // Reset handlers back to defaults before closing receipt
+    // so the refreshed transactions come from the default handler
+    server.resetHandlers();
+
+    fireEvent.click(closeButton);
+
+    // After closing, the default transaction fixture now includes the new order
     expect(screen.queryByText('No transaction history found.')).not.toBeInTheDocument();
     expect(screen.getByText(/TXN-/)).toBeInTheDocument();
   });
@@ -203,15 +240,21 @@ describe('POS API integration (MSW)', () => {
         ],
         count: 2,
       })),
+      http.get('/pos/transactions', () => HttpResponse.json({
+        ok: true,
+        orders: [],
+        count: 0,
+      })),
     );
 
-    // The POS page uses SAMPLE_INVENTORY static data, so we just validate
-    // that the MSW handler is registered and the page still renders fine.
     render(<POS />);
 
-    // Static inventory still renders as expected with MSW running
-    expect(await screen.findByText('Cotton T-Shirt')).toBeInTheDocument();
+    // With the overridden GET /pos/products handler, the page renders
+    // "T-Shirt" and "Hoodie" from the MSW response.
+    expect(await screen.findByText('T-Shirt')).toBeInTheDocument();
     expect(screen.getByText('Hoodie')).toBeInTheDocument();
+    // "Cotton T-Shirt" should NOT appear since the mock overrides products
+    expect(screen.queryByText('Cotton T-Shirt')).not.toBeInTheDocument();
   });
 
   it('handles mocked GET /pos/products/:id endpoint with correct response shape', async () => {
@@ -306,12 +349,18 @@ describe('POS API integration (MSW)', () => {
         { ok: false, error: 'Product service unavailable.' },
         { status: 500 },
       )),
+      http.get('/pos/transactions', () => HttpResponse.json({
+        ok: true,
+        orders: [],
+        count: 0,
+      })),
     );
 
-    // Page uses static data so it still renders fine
     render(<POS />);
-    expect(await screen.findByText('Cotton T-Shirt')).toBeInTheDocument();
-    expect(screen.getByText('Point of Sale')).toBeInTheDocument();
+
+    // The POS page shows the heading and error message
+    expect(await screen.findByText('Point of Sale')).toBeInTheDocument();
+    // Loading state should be gone
+    expect(screen.queryByText('Loading POS…')).not.toBeInTheDocument();
   });
 });
-

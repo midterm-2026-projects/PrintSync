@@ -1,11 +1,27 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import React from 'react';
+import { http, HttpResponse } from 'msw';
 
 import POS from '../../pages/POS';
+import { server } from '../sample-backend/server';
 
 import generateTransactionId from '../../features/pos/services/generatetransactionId';
 import { calculateFinancials, formatCurrency } from '../../features/pos/services/posService';
+
+/*
+ * Helper: override GET /pos/transactions to return empty orders
+ * so tests that check "No transaction history found." work correctly.
+ */
+function useEmptyTransactions() {
+  server.use(
+    http.get('/pos/transactions', () => HttpResponse.json({
+      ok: true,
+      orders: [],
+      count: 0,
+    })),
+  );
+}
 
 describe('POS Page (inter-component)', () => {
   it('renders POSSearchBar with search input', async () => {
@@ -43,6 +59,7 @@ describe('POS Page (inter-component)', () => {
   });
 
   it('renders TransactionHistory empty state when no transactions exist', async () => {
+    useEmptyTransactions();
     render(<POS />);
     expect(await screen.findByText('No transaction history found.')).toBeInTheDocument();
   });
@@ -55,6 +72,7 @@ describe('POS Page (inter-component)', () => {
 
 describe('POS Page - renders all POS components and services', () => {
   it('renders POSSearchBar, POSItemList, POSCart, POSTotals, OrderSummary, CheckoutModal, Receipt, TransactionHistory, and ReceiptItem', async () => {
+    useEmptyTransactions();
     render(<POS />);
 
     // POSSearchBar

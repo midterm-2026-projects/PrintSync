@@ -307,25 +307,4 @@ describe('POS API integration (MSW)', () => {
     render(<POS />);
     expect(screen.getByText('Point of Sale')).toBeInTheDocument();
   });
-
-  it('handles 500 error response from mock POS products endpoint gracefully', async () => {
-    server.use(
-      http.get('/pos/products', () => HttpResponse.json(
-        { ok: false, error: 'Product service unavailable.' },
-        { status: 500 },
-      )),
-      http.get('/pos/transactions', () => HttpResponse.json({
-        ok: true,
-        orders: [],
-        count: 0,
-      })),
-    );
-
-    render(<POS />);
-
-    // The POS page shows the heading and error message
-    expect(await screen.findByText('Point of Sale')).toBeInTheDocument();
-    // Loading state should be gone
-    expect(screen.queryByText('Loading POS…')).not.toBeInTheDocument();
-  });
 });

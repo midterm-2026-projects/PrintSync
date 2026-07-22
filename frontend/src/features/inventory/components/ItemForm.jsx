@@ -6,7 +6,7 @@ const ItemForm = ({ onAdd }) => {
   const [price, setPrice] = useState(""); // New state for price
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -22,14 +22,21 @@ const ItemForm = ({ onAdd }) => {
     }
 
     const newItem = {
+      name: name.trim(),
+      // Retained temporarily for component consumers that have not yet migrated
+      // to the API's `name` field. The backend ignores this compatibility field.
       productName: name.trim(),
       stock: stock === "" ? 0 : Number(stock),
       price: price === "" ? 0 : Number(price), // Pass price to the system
       category: "Manual Entry",
-      id: Math.random().toString(36).substr(2, 9)
     };
 
-    onAdd(newItem);
+    try {
+      await onAdd(newItem);
+    } catch (requestError) {
+      setError(requestError.message);
+      return;
+    }
     
     setName("");
     setStock("");

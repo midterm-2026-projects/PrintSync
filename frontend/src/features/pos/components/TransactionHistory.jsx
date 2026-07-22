@@ -49,7 +49,7 @@ const TransactionHistory = ({ transactions }) => {
           {safeList.map((tx, idx) => (
             <tr key={tx?.id || idx}>
               <td>{tx?.id || 'N/A'}</td>
-              <td>{formatTimestamp(tx?.timestamp)}</td>
+              <td>{formatTimestamp(tx?.createdAt || tx?.timestamp)}</td>
               <td>{formatCurrency(tx?.totalAmount)}</td>
               <td>{typeof tx?.itemsCount === 'number' ? tx.itemsCount : 'N/A'}</td>
 

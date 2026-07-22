@@ -122,44 +122,44 @@ export default function POS() {
     setLastOrderId(null);
   };
 
-  if (isLoading) {
-    return <p>Loading POS…</p>;
-  }
-
   return (
     <div>
       <h2>Point of Sale</h2>
 
+      {isLoading && <p>Loading POS…</p>}
       {error && <p role="alert">{error}</p>}
 
-      <POSSearchBar value={searchQuery} onChange={setSearchQuery} />
+      {!isLoading && (
+        <>
+          <POSSearchBar value={searchQuery} onChange={setSearchQuery} />
 
-      <POSItemList
-        inventory={filteredProducts}
-        searchQuery={searchQuery}
-        onSelectItem={handleSelectItem}
-      />
+          <POSItemList
+            inventory={filteredProducts}
+            searchQuery={searchQuery}
+            onSelectItem={handleSelectItem}
+          />
 
-      <POSCart cartItems={cartItems} onUpdateQty={handleUpdateQty} />
+          <POSCart cartItems={cartItems} onUpdateQty={handleUpdateQty} />
 
-      <POSTotals cartItems={cartItems} />
+          <POSTotals cartItems={cartItems} />
 
-      <OrderSummary cartItems={cartItems} onCheckout={handleCheckout} />
+          <OrderSummary cartItems={cartItems} onCheckout={handleCheckout} />
 
-      {showCheckout && (
-        <CheckoutModal
-          cartItems={cartItems}
-          onConfirm={handleConfirmOrder}
-          onCancel={handleCancelOrder}
-        />
+          {showCheckout && (
+            <CheckoutModal
+              cartItems={cartItems}
+              onConfirm={handleConfirmOrder}
+              onCancel={handleCancelOrder}
+            />
+          )}
+
+          {showReceipt && (
+            <Receipt cartItems={cartItems} onClose={handleCloseReceipt} orderId={lastOrderId} />
+          )}
+
+          <TransactionHistory transactions={transactions} />
+        </>
       )}
-
-      {showReceipt && (
-        <Receipt cartItems={cartItems} onClose={handleCloseReceipt} orderId={lastOrderId} />
-      )}
-
-      <TransactionHistory transactions={transactions} />
     </div>
   );
 }
-
